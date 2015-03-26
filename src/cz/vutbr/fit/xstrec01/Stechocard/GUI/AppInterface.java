@@ -6,6 +6,7 @@
 package cz.vutbr.fit.xstrec01.Stechocard.GUI;
 
 import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
+import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.CatmullRomSpline;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidPlayer;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidLoader;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.ShapeSerializer;
@@ -15,6 +16,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -159,9 +161,10 @@ public class AppInterface extends JFrame implements ActionListener, ChangeListen
         switch (actComm) {
             case "buttonAddShape":
                 if (buttonPlay.isEnabled()) {
+                    vidFrame.drawSpline(shapes.saveRecentShape());
                     shapes.addShape();
                     pointCnt.resetPts();
-                    vidFrame.setImg(vidData.getFrame(VidPlayer.getPos()));
+                    //vidFrame.setImg(vidData.getFrame(VidPlayer.getPos()));
                 }
                 break;
             case "buttonPlay":
@@ -236,10 +239,5 @@ public class AppInterface extends JFrame implements ActionListener, ChangeListen
         buttonPrevFrame.setEnabled(false);
         buttonPlay.setEnabled(false);
         buttonNextFrame.setEnabled(false);        
-    }
-    
-    private boolean saveShapes() {
-        
-        return true;
     }
 }

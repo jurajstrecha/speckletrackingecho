@@ -9,6 +9,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.util.ArrayList;
 import javax.swing.JPanel;
 import org.opencv.core.Mat;
 
@@ -37,7 +38,8 @@ public class VidFrame extends JPanel {
                         click = me.getPoint();
                         isClicked = true;
                         cntLabel.incPts();
-                        shapes.addPoint(click);
+                        int[] point = {click.x, click.y};
+                        shapes.addPoint(point);
                         repaint();
                     }
                 }                
@@ -70,6 +72,19 @@ public class VidFrame extends JPanel {
                    click.x - crossMarkHalfLineSize, click.y);
         g.drawLine(click.x, click.y + crossMarkHalfLineSize,
                    click.x, click.y - crossMarkHalfLineSize);
+    }
+    
+    public void drawSpline(ArrayList<int[]> spline) {
+        Graphics g = img.getGraphics();
+        g.setColor(Color.GREEN);
+        for (int i = 0; i < spline.size()- 1; i++) {
+            g.drawLine(spline.get(i)[0], spline.get(i)[1], spline.get(i + 1)[0], spline.get(i + 1)[1]);            
+        }
+        
+        int i = spline.size() - 1;
+        g.drawLine(spline.get(i - 1)[0], spline.get(i - 1)[1], spline.get(i)[0], spline.get(i)[1]);
+        
+        repaint();
     }
     
     public static Image matToImg(Mat capFrame, int frameWidth, int frameHeight, int imgType) {
