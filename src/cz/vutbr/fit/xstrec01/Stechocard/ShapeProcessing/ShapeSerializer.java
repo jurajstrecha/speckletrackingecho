@@ -37,7 +37,9 @@ public class ShapeSerializer extends ArrayList<ArrayList<int[]>> {
         ArrayList<int[]> recentShape = getRecentShape();
               
         if (recentShape != null && recentShape.size() > 3) {
-            this.deltaT = 1.0f / (float)(recentShape.size() * 10);
+            this.deltaT = 1.0f / (float)(recentShape.size());
+            System.out.println("point cnt = " + recentShape.size());
+            System.out.println("delta t = " + this.deltaT);
             
             // kopiruj prvy a posledny prvok na zaciatok a koniec pola
             ArrayList<int[]> CRShape = new ArrayList<int[]>(recentShape.size() + 2);
@@ -49,7 +51,8 @@ public class ShapeSerializer extends ArrayList<ArrayList<int[]>> {
             
             ArrayList<int[]> poly = new ArrayList<int[]>();
             float t = 0.0f;
-            while(t < 1.0) {
+            while(t < 1.0 + this.deltaT) {
+                System.out.println("t = " + t);
                 poly.add(RCPoint(recentShape, t));                
                 t += this.deltaT;
             }
