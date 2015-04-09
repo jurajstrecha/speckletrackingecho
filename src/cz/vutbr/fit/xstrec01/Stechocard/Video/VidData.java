@@ -1,7 +1,7 @@
 package cz.vutbr.fit.xstrec01.Stechocard.Video;
 
+import java.awt.Image;
 import java.util.ArrayList;
-import org.opencv.core.Mat;
 
 /**
  *
@@ -12,13 +12,11 @@ public class VidData {
     private double frameWidth;
     private double frameHeight;
     private double frameCnt;
-    private final ArrayList<Mat> frames;
+    private final ArrayList<Image> frames;
     private int frameNo;
     
     public VidData() {
         this.frames = new ArrayList<>();
-        this.frameCnt = 0;
-        this.frameNo = 0;
     }
     
     public double getFramerate() {
@@ -52,13 +50,24 @@ public class VidData {
     public void setFrameCnt(double cnt) {
         frameCnt = cnt;
     }
+
+    public int getFrameNo() {
+        return frameNo;
+    }
     
-    public Mat getFrame(int i) {
+    public Image getFrame() {
+        return frames.get(frameNo);
+    }
+    
+    public Image getFrame(int i) {
         if (i > -1 && i < frames.size()) {
+            frameNo = i;
             return frames.get(i);
         } else if (i < 0) {
+            frameNo = 0;
             return frames.get(0);
         } else if (i >= frames.size()) {
+            frameNo = frames.size() - 1;
             return frames.get(frames.size() - 1);
         } else {
             return null;
@@ -71,7 +80,7 @@ public class VidData {
         frameNo = 0;
     }
     
-    public void addFrame(Mat frame) {
+    public void addFrame(Image frame) {
         frames.add(frame);
     }
     
@@ -79,17 +88,13 @@ public class VidData {
         frameNo = no;
     }
     
-    public Mat getNextFrame() {
+    public Image getNextFrame() {
         if (frameNo <= frameCnt) {
-            Mat ret = getFrame();
+            Image ret = getFrame();
             frameNo++;
             return ret;
         } else {
             return null;
         }
-    }
-    
-    public Mat getFrame() {
-        return frames.get(frameNo);
     }
 }
