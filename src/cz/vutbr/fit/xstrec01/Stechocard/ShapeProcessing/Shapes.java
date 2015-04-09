@@ -79,16 +79,51 @@ public class Shapes {
      */
     public static ArrayList<Point> divideSpline(ArrayList<Point> spline, int intervals) {
         if (spline != null && spline.size() > 1) {
-            ArrayList<Point> a = new ArrayList<Point>();
-            // get some amount (defined in Constants) of points from spline
-            return a;
+            ArrayList<Point> mainPoints = new ArrayList<Point>();
+            
+            // calculate spline length
+            double splineLen = 0;            
+            for(int i = 1; i < spline.size() - 1; i++) {
+                splineLen += getDistance(spline.get(i - 1), spline.get(i));
+            }           
+            
+            // 
+            mainPoints.add(spline.get(0));
+            double increment = splineLen / Constants.SPLINE_DIV_INTERVALS;
+            double border = increment;
+            double currLen = 0.0;
+            int counter = 1;
+            double dist;
+            while (border <= splineLen && counter < spline.size()) {
+                dist = getDistance(spline.get(counter - 1), spline.get(counter));
+                currLen += dist;
+                if (currLen >= border) {
+                    mainPoints.add(spline.get(counter));
+                    border += increment;
+                }
+                counter++;
+            }
+            
+            // make rounding error correction compating spline length and current length
+            if (mainPoints.size() < Constants.SPLINE_DIV_INTERVALS + 1) {
+                mainPoints.add(spline.get(spline.size() - 1));
+            }
+                       
+            return mainPoints;
         }
         return null;
     }
     
-    public void addShape() {
+    public static double getDistance(Point a, Point b) {
+        double vecXLen = a.getX() - b.getX();
+        double vecYLen = a.getY() - b.getY();
+        // Euclidean distance
+        return Math.sqrt(vecXLen * vecXLen + vecYLen * vecYLen);
+    }
+    
+    public void addShape(ArrayList<Point> shape) {
         if (memory != null) {
-            // TODO
+            memory.add(shape);
         }
     }
 

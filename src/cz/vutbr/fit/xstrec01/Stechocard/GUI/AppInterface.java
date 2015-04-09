@@ -2,6 +2,7 @@ package cz.vutbr.fit.xstrec01.Stechocard.GUI;
 
 import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.CatmullRom;
+import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Shapes;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidData;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidLoader;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidPlayer;
@@ -47,6 +48,7 @@ public class AppInterface extends JFrame implements ActionListener, ChangeListen
     PlayButton buttonPlay;
     JSlider vidSlider;
     VidPlayer player;
+    Shapes shapes;
     
     public AppInterface() {
         super(Constants.appName);
@@ -63,6 +65,7 @@ public class AppInterface extends JFrame implements ActionListener, ChangeListen
         
         mode = Constants.MODE_SHAPES;
         enableControls(false);
+        shapes = new Shapes();
 
         // display the window
         pack();
@@ -242,6 +245,7 @@ public class AppInterface extends JFrame implements ActionListener, ChangeListen
             case "Generate":
                 ArrayList<Point> controlPoints = canvas.getControlPoints();
                 if (controlPoints != null && controlPoints.size() > 1) {
+                    shapes.serializeShape(controlPoints);
                     ArrayList<Point> splinePoints;
                     splinePoints = CatmullRom.calculateSpline(controlPoints);
                     canvas.setSplinePoints(splinePoints);
