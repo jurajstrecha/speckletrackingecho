@@ -5,13 +5,15 @@ import static org.opencv.highgui.Highgui.CV_CAP_PROP_FRAME_HEIGHT;
 import static org.opencv.highgui.Highgui.CV_CAP_PROP_FRAME_WIDTH;
 import org.opencv.highgui.VideoCapture;
 import static cz.vutbr.fit.xstrec01.Stechocard.App.Constants.CV_CAP_PROP_FPS;
-import static cz.vutbr.fit.xstrec01.Stechocard.App.Constants.CV_CAP_PROP_FRAME_COUNT;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 
 /**
- *
+ * Otvori video subor na zadanej ceste, ulozi informacie o videu a do datovej
+ * struktury VidData ulozi snimky prekonvertovane z matice na bufferovany
+ * obrazok.
+  
  * @author Bc. Juraj Strecha
  */
 final public class VidLoader {
@@ -26,12 +28,16 @@ final public class VidLoader {
         if (!cap.isOpened()) {
             return false;
         } else {
+            if (vidData == null) {
+                vidData = VidData.getInstance();
+            } else {
+                vidData.reset();
+            }
             
             Mat frameMat = new Mat();
             cap.read(frameMat);
             
             double frameRate = cap.get(CV_CAP_PROP_FPS);
-            int frameCnt = (int)cap.get(CV_CAP_PROP_FRAME_COUNT);
             int frameWidth = (int)cap.get(CV_CAP_PROP_FRAME_WIDTH);
             int frameHeight = (int)cap.get(CV_CAP_PROP_FRAME_HEIGHT);
             int imgType = frameMat.channels() > 1 ?
@@ -39,7 +45,6 @@ final public class VidLoader {
                       BufferedImage.TYPE_BYTE_GRAY;
 
             vidData.setFramerate(frameRate);
-            vidData.setFrameCnt(frameCnt);
             vidData.setFrameWidth(frameWidth);
             vidData.setFrameHeight(frameHeight);
             
