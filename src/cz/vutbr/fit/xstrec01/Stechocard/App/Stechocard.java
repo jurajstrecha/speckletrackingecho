@@ -5,8 +5,9 @@ import javax.swing.SwingUtilities;
 import org.opencv.core.Core;
 
 /**
- *
- * @author Bc. Juraj Strecha
+ * Hlavna trieda nacita OpenCV kniznicu a spusti aplikaciu
+ * 
+ * @author Juraj Strecha, xstrec01
  */
 public class Stechocard {
     

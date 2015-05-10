@@ -1,7 +1,6 @@
 package cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing;
 
 import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
-import cz.vutbr.fit.xstrec01.Stechocard.Video.VidData;
 import java.awt.Point;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -10,29 +9,29 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 /**
- * Data structure holding points representing user annotated shapes.
- * Can select Constants.SPLINE_DIV_INTERVALS + 1 points from shape in spline form.
- * Stores serialized shapes onto the hard drive.
+ * Dátová štruktúra uchováva body, ktoré reprezentujú užívate+lom anotovaný tvar.
+ * Pri serializácii sa najskôr z bodov tvar vypočíta splajn, a potom sa krivka
+ * rovnomerne rozdelí podľa vzdialenosti na Constants.SPLINE_DIV_INTERVALS
+ * intervalov. Vznikne tak Constants.SPLINE_DIV_INTERVALS + 1 bodov a tie
+ * reprezentujú tvar pre ďalšie počítanie.
  * 
- * @author Bc. Juraj Strecha, xstrec01@stud.fit.vutbr.cz
+ * @author Juraj Strecha, xstrec01
  */
-public final class Shapes extends ArrayList<Shape>{   
-    private static final Logger logger = Logger.getLogger(VidData.class.getName());
+public final class Shapes extends ArrayList<Shape>{
    
     /**
-     * Create a set of points from user annotated points using spline
-     * representation and spline interval division and point selection.
-     * The reduced points are stored as a shape into object memory.
+     * Z užívateľom anotovaného tvaru (sady bodov) vytvorí reprezentáciu tvaru
+     * pomocou preloženia parametrickou krivkou - splajnom a rozdelením splajnu
+     * na intervaly, čím vznikne rovnaký počet bodov pre každý z tvarov a tvar
+     * nie je závislý na počte užívateľom označených bodov.
      * 
-     * @param shape Points provided by the user
-     * @return true if the shape was stored, false otherwise
+     * @param shape body vyznačené užívateľom
+     * @return true, ak sa poradilo tvar uložiť, inak false
      */
     public boolean serializeShape(Shape shape) {
         ArrayList<Point> spline;
@@ -58,13 +57,14 @@ public final class Shapes extends ArrayList<Shape>{
     }
     
     /**
-     * Stores serialized shape as a file on the hard drive, lets the user
-     * select file name and destination by displaying a save dialog.
+     * Uloží serializované tvary do užívateľom zvoleného súboru. Používa objekty
+     * a funkcie knižnice Google JSONSimple.
      * 
-     * @return true if stored successfully, false otherwise
+     * @param shapes databáza anotovaných tvarov
+     * @param filename názov súboru
+     * @return true, ak uloženie prebehlo v poriadku, inak false
      */
     public static boolean saveShapes(Shapes shapes, String filename) {
-        // take all serialized shapes and store them on the disk using user dialog
         if (shapes == null || shapes.isEmpty()) {            
             return false;
         }
@@ -101,7 +101,7 @@ public final class Shapes extends ArrayList<Shape>{
             jsonShapes.writeJSONString(bw);
             
         } catch (IOException ex) {
-            logger.log(Level.ALL, "Unable to load file to store shapes");
+            System.err.println("Unable to load file to store shapes");
             return false;
         } finally {
             if (bw != null) {
@@ -112,7 +112,15 @@ public final class Shapes extends ArrayList<Shape>{
         }
         return true;
     }
-    
+
+    /**
+     * Zo zadaného súboru na disku nahrá serializované tvary. Používa objekty
+     * a funkcie knižnice Google JSONSimple.
+     * 
+     * @param shapes databáza anotovaných tvarov
+     * @param filename názov súboru
+     * @return true, ak nahratie prebehlo v poriadku, inak false
+     */
     public static boolean loadShapes(Shapes shapes, String filename) {
         if (shapes == null) {
             return false;
@@ -146,7 +154,7 @@ public final class Shapes extends ArrayList<Shape>{
                         point = (JSONArray)jsonAnnotated.get(j);
                         x = (long)point.get(0);
                         y = (long)point.get(1);
-                        // JSON Simple dokaze dekodovat iba do long, pre vytvorenie
+                        // JSON Simple dokáže dekódovať iba do long, pre vytvorenie
                         // Point potrebujeme int
                         shape.addAnnotatedPoint(new Point((int)x, (int)y));
                     }
@@ -160,14 +168,13 @@ public final class Shapes extends ArrayList<Shape>{
                     shapes.add(shape);
                 }                
             } else {
-                logger.log(Level.SEVERE, "Unable to open file for read: {0}", filename);
+                System.out.println("Unable to open file for read: {0}" + filename);
             }
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, "loadShapes: ", ex);
+            System.out.println("loadShapes: " + ex.getMessage());
         } finally {
 
-        }
-        
+        }        
         
         return true;
     }

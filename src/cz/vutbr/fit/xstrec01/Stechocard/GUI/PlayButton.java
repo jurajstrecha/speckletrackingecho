@@ -3,8 +3,9 @@ package cz.vutbr.fit.xstrec01.Stechocard.GUI;
 import javax.swing.JButton;
 
 /**
+ * Tlačítko pre spúšťanie/prerušovanie prehrávania. Udržiava si v pamäti svoj stav.
  *
- * @author Bc. Juraj Strecha
+ * @author Juraj Strecha, xstrec01
  */
 public class PlayButton extends JButton {
     private boolean play = false;
@@ -18,6 +19,11 @@ public class PlayButton extends JButton {
     }
     
     public void setPlay(boolean state) {
+        if (state == true) {
+            setText("PAUSE");
+        } else {
+            setText("PLAY");
+        }
         play = state;
     }
 }

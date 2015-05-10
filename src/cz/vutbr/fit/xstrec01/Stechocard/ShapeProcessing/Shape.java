@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.awt.Point;
 
 /**
- * Reprezentuje tvar vyznaceny uzivatelom. Obsahuje body, ktore uzivatel naklikal
- * a tiez body, ktore boli vypocitane zo splajnu. Tie budu pouzite pre vypocet
+ * Reprezentuje tvar vyznačený užívateľom. Obsahuje body, ktoré užívateľ naklikal
+ * a tiež body, ktoré boli vypočítané zo splajnu. Tie budú použité pre výpočet
  * modelu.
  * 
- * @author Bc. Juraj Strecha
+ * @author Juraj Strecha, xstrec01
  */
 public final class Shape {
     ArrayList<Point> annotatedPoints;
@@ -18,6 +18,10 @@ public final class Shape {
         annotatedPoints = new ArrayList<Point>();
         splinePoints = new ArrayList<Point>();
     }
+    
+    public void addAnnotatedPoints(ArrayList<Point> pts) {
+        annotatedPoints.addAll(pts);
+    }    
     
     public void addAnnotatedPoint(Point pt) {
         annotatedPoints.add(pt);

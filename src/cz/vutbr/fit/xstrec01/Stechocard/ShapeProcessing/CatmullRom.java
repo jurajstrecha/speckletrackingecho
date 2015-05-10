@@ -5,20 +5,19 @@ import java.awt.Point;
 import java.util.ArrayList;
 
 /**
- * Set of static methods providing Catmull-Rom interpolation spline points enumeration.
- * Source of inspiration: http://www.booncotter.com/waypoints-catmull-rom-splines/
+ * Sada statických metód pre výpočet bodov Catmull-Rom interpolačného splajnu.
+ * Zdroj inšpirácie: http://www.booncotter.com/waypoints-catmull-rom-splines/
  * 
- * @author Juraj Strecha, duri.strecha@gmail.com
- * @version 1.0
+ * @author Juraj Strecha, xstrec01
  */
 public class CatmullRom {
     
     /**
-     * Enumerates interpolation spline points using a set of control points,
-     * samples per span count and Catmull-Rom polynom equations.
+     * Z kontrolných bodov zadaných užívateľom, počtu vzorkov na jeden úsek
+     * a rovníc Catmull-Rom polynómu vypočíta splajn krivku.
      * 
-     * @param controlPoints Set of control points that will be interpolated by the spline
-     * @return Resulting set of spline points
+     * @param controlPoints kontrolné body, ktorými bude preložený splajn
+     * @return výsledná sada bodov, ktoré tvoria kompletný splajn
      */
     public static ArrayList<Point> calculateSpline(ArrayList<Point> controlPoints) {
         if (controlPoints != null && controlPoints.size() > 1) {
@@ -27,8 +26,8 @@ public class CatmullRom {
             double deltaT = 1.0 / samples;
             double t;
             
-            // copy start and end point at the beginning and the end of the set
-            // to include the first and last control point in spline
+            // kopírovanie prvého a posledného bodu na začiatok a koniec zoznamu
+            // pre ich zachovanie v splajne
             extendCtrlPointsSet(controlPoints);
             
             for (int i = 1; i < controlPoints.size() - 2; i++) {
@@ -52,15 +51,15 @@ public class CatmullRom {
     }
     
     /**
-     * Enumerates a new point for the interpolation spline according to the
-     * t-parameter using polynomial formulas.
+     * Spočíta nový bod interpolačného splajnu na základe parametru t pomocou
+     * polynomiálnych rovníc.
      * 
-     * @param p1 First control point - affects a shape of the spline
-     * @param p2 Second control point - start of the interval
-     * @param p3 Third control point - end of the interval
-     * @param p4 Fourth control point - affects a shape of the spline
-     * @param t Relative t-parameter inside the interval
-     * @return Point from the resulting spline
+     * @param p1 prvý kontrolný bod - ovplyvňuje tvar splajnu
+     * @param p2 druhý kontrolný bod - štart intervalu
+     * @param p3 tretí kontrolný bod - koniec intervalu
+     * @param p4 štvrtý kontrolný bod - ovplyvňuje tvar splajnu
+     * @param t relatívny parameter vnútri intervalu
+     * @return body výsledného splajnu
      */
     public static Point CREquation(Point p1, Point p2, Point p3, Point p4, double t) {       
         double t2 = t * t;
@@ -80,6 +79,12 @@ public class CatmullRom {
         return result;
     }
     
+    /**
+     * Vypočíta dĺžku splajnu v pixeloch.
+     * 
+     * @param spline splajn krivka, ktorej dĺžku chceme spočítať
+     * @return dĺžka splajnu v pixeloch
+     */
     public static double getSplineLength(ArrayList<Point> spline) {
         double length = 0.0;
         Point recentPoint = getFirstPoint(spline);
@@ -99,9 +104,9 @@ public class CatmullRom {
     }
     
     /**
-     * Copies the first/last point at the start/end of the set.
+     * Kopíruje prvý a posledný bod na začiatok a koniec zoznamu.
      * 
-     * @param points Set of points to be extended by the first and last item
+     * @param points zoznam bodov rozšírený o prvý a posledný bod
      */
     public static void extendCtrlPointsSet(ArrayList<Point> points) {
         if (points != null && points.size() > 1) {
@@ -110,6 +115,11 @@ public class CatmullRom {
         }
     }
     
+    /**
+     * Odstráni pridaný prvý a posledný bod zo začiatku a konca zoznamu.
+     * 
+     * @param points výsledný zoznam bodov
+     */
     public static void removeExtendedCtrlPoints(ArrayList<Point> points) {
         if (points != null) { 
             int pointsCnt = points.size();
@@ -121,10 +131,10 @@ public class CatmullRom {
     }
     
     /**
-     * Returns the first point in the set
+     * Vráti prvý bod zoznamu.
      * 
-     * @param points Set of points
-     * @return First point in the set
+     * @param points zoznam bodov
+     * @return prvý bod zoznamu
      */
     public static Point getFirstPoint(ArrayList<Point> points) {
         if (points != null) {
@@ -134,10 +144,10 @@ public class CatmullRom {
     }
     
     /**
-     * Returns the last point in the set.
+     * Vráti posledný bod zoznamu.
      * 
-     * @param points Set of points
-     * @return Last point in the set
+     * @param points zoznam bodov
+     * @return posledný bod zoznamu
      */
     public static Point getLastPoint(ArrayList<Point> points) {
         if (points != null) {
@@ -147,18 +157,17 @@ public class CatmullRom {
     }
     
     /**
-     * Selects points from the spline, selects them evenly using
-     * intervals parameter.
+     * Zvolí zadaný počet bodov zo splajnu rovnomerne podľa dĺžky splajnu.
+     * Vznikne o jeden bod viac ako je počet intervalov.
      * 
-     * @param spline Spline shape points
-     * @param intervals Number of intervals to divide shape to
-     * @return Selected points in count of intervals + 1
+     * @param spline body splajnu
+     * @param intervals počet intervalov, na ktoré bude splajn rozdelený
+     * @return výsledná reprezentácia splajnu o veľkosti intervals + 1 bodov
      */
     public static ArrayList<Point> divideSpline(ArrayList<Point> spline, int intervals) {
         if (spline != null && spline.size() > 1) {
             ArrayList<Point> mainPoints = new ArrayList<Point>();
             
-            // calculate spline length
             double splineLen = 0;            
             for(int i = 1; i < spline.size() - 1; i++) {
                 splineLen += getDistance(spline.get(i - 1), spline.get(i));
@@ -181,7 +190,7 @@ public class CatmullRom {
                 counter++;
             }
             
-            // make rounding error correction compating spline length and current length
+            // oprava zaokrúhľovacej chyby
             if (mainPoints.size() < Constants.SPLINE_DIV_INTERVALS + 1) {
                 mainPoints.add(spline.get(spline.size() - 1));
             }
@@ -191,6 +200,13 @@ public class CatmullRom {
         return null;
     }
     
+    /**
+     * Spočíta Euklidovskú vzdialenosť dvoch bodov.
+     * 
+     * @param a prvý bod
+     * @param b druhý bod
+     * @return vzdialenosť v piexloch
+     */
     public static double getDistance(Point a, Point b) {
         double vecXLen = a.getX() - b.getX();
         double vecYLen = a.getY() - b.getY();

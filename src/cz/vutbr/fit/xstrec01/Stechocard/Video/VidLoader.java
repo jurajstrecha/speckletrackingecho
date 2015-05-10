@@ -8,16 +8,28 @@ import static cz.vutbr.fit.xstrec01.Stechocard.App.Constants.CV_CAP_PROP_FPS;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import org.opencv.core.CvType;
+import org.opencv.imgproc.Imgproc;
 
 /**
- * Otvori video subor na zadanej ceste, ulozi informacie o videu a do datovej
- * struktury VidData ulozi snimky prekonvertovane z matice na bufferovany
- * obrazok.
+ * Otvorí video súbor na zadanej ceste, uloží informácie o videu a do dátovej
+ * štruktúry VidData uloží snímky prekonvertované z matice na bufferovaný
+ * obrázok.
   
- * @author Bc. Juraj Strecha
+ * @author Juraj Strecha, xstrec01
  */
 final public class VidLoader {
     
+    /**
+     * Pomocou OpenCV načíta všetky snímky videa, farebné pre prehrávanie
+     * konvertuje na objektu triedy Image, šedotónové pre Optical Flow.
+     * Zistí parametre prehrávaného videa a všetko uloží do objektu triedy
+     * VidData.
+     * 
+     * @param path
+     * @param vidData
+     * @return 
+     */
     public static boolean load(String path, VidData vidData) {
         VideoCapture cap;
         try {
@@ -49,7 +61,11 @@ final public class VidLoader {
             vidData.setFrameHeight(frameHeight);
             
             do {
+                // pridaj snimok na vykreslenie
                 vidData.addFrame(matToImg(frameMat, frameWidth, frameHeight, imgType));
+                // pridaj snimok v odtienoch sedi pre sledovanie optickeho toku
+                Imgproc.cvtColor(frameMat, frameMat, CvType.CV_8U);
+                vidData.addGrayFrame(frameMat.clone());
             } while (cap.read(frameMat));
                   
             
@@ -58,6 +74,17 @@ final public class VidLoader {
         }
     }
     
+    /**
+     * Transformuje snímok vo formáte OpenCV matice získaného pomocou OpenCV capture
+     * na objekt triedy Image, ktorý sa dá zobraziť na JPanel.
+     * 
+     * @param capFrame snímok získaný pomocou OpenCV capture
+     * @param frameWidth šírka snímku
+     * @param frameHeight výška snímku
+     * @param imgType dátový typ hodnôt snímku
+     * @return snímka zobraziteľná na plátne
+     */
+     
     public static Image matToImg(Mat capFrame, int frameWidth, int frameHeight, int imgType) {
         BufferedImage image = new BufferedImage(frameWidth, frameHeight, imgType);
         int bufferSize = capFrame.channels() * frameWidth * frameHeight;

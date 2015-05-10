@@ -8,14 +8,13 @@ import cz.vutbr.fit.xstrec01.Stechocard.Video.VidLoader;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidPlayer;
 import java.awt.BorderLayout;
 import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.GridBagLayout;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.ArrayList;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -35,50 +34,54 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 /**
- * Main graphical user interface for the Catmull-Rom Spline Demonstration application.
- * Creates and initializes all interface components and adds their functionality as well.
+ * Grafické užívateľské rozhranie. Riadenie udalostí generovaných prvkami
+ * rozhrania. Volanie konštruktoru vytvorí okno aplikácie a nastaví prvky
+ * riadenia programu tak, aby sa s aplikáciou dalo pracovať.
  * 
- * @author Juraj Strecha, duri.strecha@gmail.com
- * @version 1.0
+ * @author Juraj Strecha, xstrec01
  */
 public final class AppInterface extends JFrame {
-    private Canvas canvas;
+    private final Canvas canvas;
+    private final Shapes shapes;
     private final VidData frames;
+    private VidPlayer player;    
     private int mode;
     JMenuItem menuItemSave;
     JMenuItem menuItemLoad;
     private JPanel vidControlsPane;
     private PlayButton buttonPlay;
     private JSlider vidSlider;
-    private VidPlayer player;
-    private final Shapes shapes;
     private final JOptionPane optionPane;
     private final JDialog dialog;
-    
-    private static final Logger logger = Logger.getLogger(VidData.class.getName());
+    JPanel trackingControls;
+    JPanel annotControls;
     
     public AppInterface() {
-        super(Constants.appName);
-        logger.setLevel(Level.FINE);
-        
-        // set up the application main window
+        super(Constants.APP_NAME);
+
+        // základné nastavenie okna aplikácie
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         getContentPane().setBackground(Constants.BACKGROUND_COLOR);
         setMinimumSize(Constants.APP_WINDOW_MIN_SIZE);
         
         createMenu();
+        canvas = new Canvas();
         createComponents(getContentPane());
         
+        // dialógové okno sa zobrazí pri načítavaní videa
         optionPane = new JOptionPane("Please wait", JOptionPane.INFORMATION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{}, null);
         dialog = new JDialog();
         initLoadingDialog();
         
+        // ovládanie videa, vypnuté, kým nie je  video načítané
         enableControls(false);
+        // počiatočným módom je anotovanie tvarov
         mode = Constants.MODE_SHAPES;
+        
+        // dátové štruktúry - tvary a snímky načítaného videa
         shapes = new Shapes();
         frames = VidData.getInstance();
 
-        // display the window
         pack();
         setVisible(true);
         setLocationRelativeTo(null);
@@ -86,9 +89,9 @@ public final class AppInterface extends JFrame {
     }
 
     /**
-     * Construct, set and add all GUI components to the main window.
+     * Vytvor, nastav a vlož do GUI komponenty.
      * 
-     * @param pane Pane for constructed components
+     * @param pane hlavná plocha aplikačného rozhrania
      */
     private void createComponents(Container pane) {
         pane.setLayout(new BorderLayout());
@@ -97,7 +100,6 @@ public final class AppInterface extends JFrame {
         canvasPane.setBackground(Constants.BACKGROUND_COLOR);
         canvasPane.setLayout(new GridBagLayout());
         
-        canvas = new Canvas();
         canvas.setBackground(Constants.CANVAS_COLOR);
         canvas.setPreferredSize(Constants.CANVAS_SIZE);        
         canvasPane.add(canvas);
@@ -129,18 +131,15 @@ public final class AppInterface extends JFrame {
         });
         
         buttonPlay = new PlayButton("Play");
-        buttonPlay.setActionCommand("Play");
         buttonPlay.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (buttonPlay.isPlay()) {
                     buttonPlay.setPlay(false);
-                    buttonPlay.setText("Play");
                     player.setPlaying(false);
                     
                 } else {
                     buttonPlay.setPlay(true);
-                    buttonPlay.setText("Pause");
                     if (player != null) {
                         player.setPlaying(true);
                         new Thread(player).start();
@@ -162,59 +161,102 @@ public final class AppInterface extends JFrame {
 
         pane.add(vidControlsPane, BorderLayout.SOUTH);
 
-        JPanel controls = new JPanel();
-        controls.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        controls.setLayout(new BoxLayout(controls ,BoxLayout.Y_AXIS));
-        JButton buttonAddShape = addButton("Add Shape", controls);
+        annotControls = new JPanel();
+        annotControls.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        annotControls.setLayout(new BoxLayout(annotControls ,BoxLayout.Y_AXIS));
+        JButton buttonAddShape = addButton("Add Shape", annotControls);
         buttonAddShape.setMaximumSize(Constants.CTRL_BUTTONS_SIZE);
         buttonAddShape.addActionListener(new ActionListener() {
+            
             @Override
             public void actionPerformed(ActionEvent e) {
-                Shape shape = canvas.getShape();
-                if (shape.getAnnotatedPoints().isEmpty()) {
-                    logger.log(Level.FINE, "No annotated points to store");
+                Shape shape;
+                ArrayList<Point> controlPts = canvas.getControlPts();
+                if (controlPts.isEmpty()) {
                     System.err.println("No annotated points to store");
                 } else {
+                    shape = new Shape();
+                    shape.addAnnotatedPoints(controlPts);
                     if (shapes.serializeShape(shape)) {
                         canvas.reset();
-                        logger.log(Level.FINE, "Shape stored. {0} shapes so far.", shapes.size());
-                        System.out.println("Stored. " + shapes.size() + " so far.");
+                        System.out.println("Shape stored. Total: " + shapes.size() + " shapes.");
                     } else {
-                        logger.log(Level.SEVERE, "Shape storing failed");
                         System.err.println("Shape storing failed");
                     }
                 }
-            }            
+            }
+            
         });
-        controls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
-        JButton buttonReset = addButton("Reset", controls);
+        annotControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
+        JButton buttonReset = addButton("Reset", annotControls);
         buttonReset.setMaximumSize(Constants.CTRL_BUTTONS_SIZE);
         buttonReset.addActionListener(new ActionListener() {
+            
             @Override
             public void actionPerformed(ActionEvent e) {
                 canvas.reset();
-            }            
+            }
+            
         });
-        controls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
+        annotControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
         JPanel controlsHolder = new JPanel();
-        controlsHolder.add(controls);
+        controlsHolder.add(annotControls);
+        annotControls.setVisible(true);
+        
+        trackingControls = new JPanel();
+        trackingControls.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        trackingControls.setLayout(new BoxLayout(trackingControls ,BoxLayout.Y_AXIS));
+        JButton buttonSetTrackingPts = addButton("Tracking", trackingControls);
+        buttonSetTrackingPts.setMaximumSize(Constants.CTRL_BUTTONS_SIZE);
+        buttonSetTrackingPts.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // ak nebol označený žiaden bod na sledovanie
+                if (!canvas.getControlPts().isEmpty()) {
+                    canvas.setTracking(true);
+                    player.setTracking(true);
+                }
+            }
+            
+        });
+        trackingControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
+        
+        JButton buttonTrackingReset = addButton("Reset", trackingControls);
+        buttonTrackingReset.setMaximumSize(Constants.CTRL_BUTTONS_SIZE);
+        buttonTrackingReset.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                canvas.setTracking(false);
+                canvas.reset();
+                player.setTracking(false);
+            }
+            
+        });
+        trackingControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
+        controlsHolder.add(trackingControls);
+        trackingControls.setVisible(false);
+        
         pane.add(controlsHolder, BorderLayout.EAST);        
     }
     
+    /**
+     * Vytvorí dialógové okno, ktoré sa zobrazí pri nahrávaní videa.
+     */
     private void initLoadingDialog() {
         dialog.setTitle("Loading");
-        dialog.setPreferredSize(new Dimension(300, 200));
+        dialog.setPreferredSize(Constants.LOADING_DIALOG_DIM);
         dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
         dialog.pack();
         dialog.setLocationRelativeTo(null);
     }
     
     /**
-     * Creates button with preferred button size and adds it to the provided 
-     * container.
+     * Vytvorí tlačítko s textom a pridá ho na plochu, ktorá bola zadaná.
      * 
-     * @param container Container for the button to be added to
-     * @param text Text displayed on the button
+     * @param container plocha, kam sa má tlačítko pridať
+     * @param text text zobrazený na tlačítku
      */
     private static JButton addButton(String text, Container container) {
         JButton button = new JButton(text);
@@ -222,6 +264,9 @@ public final class AppInterface extends JFrame {
         return button;
     }
 
+    /**
+     * Inicializuje menu aplikácie.
+     */
     private void createMenu() {
         JMenuBar menuBar = new JMenuBar();
         
@@ -273,11 +318,14 @@ public final class AppInterface extends JFrame {
         
         ButtonGroup group = new ButtonGroup();
         
-        JRadioButtonMenuItem menuItemShapes = new JRadioButtonMenuItem("Create Shapes");
+        JRadioButtonMenuItem menuItemShapes = new JRadioButtonMenuItem("Annotate Shapes");
         menuItemShapes.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
                 setMode(Constants.MODE_SHAPES);
+                canvas.reset();
+                annotControls.setVisible(true);
+                trackingControls.setVisible(false);
             }            
         });
         menuItemShapes.setSelected(true);
@@ -289,6 +337,9 @@ public final class AppInterface extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setMode(Constants.MODE_TRACKING);
+                canvas.reset();
+                annotControls.setVisible(false);
+                trackingControls.setVisible(true);
             }            
         });
         group.add(menuItemTracking);
@@ -297,25 +348,48 @@ public final class AppInterface extends JFrame {
         setJMenuBar(menuBar);
     }
     
+    /**
+     * Nastaví mód, v ktorom užívateľ pracuje.
+     * 
+     * @param mode 
+     */
     private void setMode(int mode) {
-        if (mode == Constants.MODE_SHAPES) {
-            System.out.println("MODE_SHAPES");
-        } else if (mode == Constants.MODE_TRACKING) {
-            System.out.println("MODE_TRACKING");
-        }
         this.mode = mode;
     }
     
-    private int getMode() {
-        return mode;
+    /**
+     * Zistí, či je aktívny anotačný mód.
+     * 
+     * @return true, ak je aktívny anotačný mód, inak false
+     */
+    private boolean isShapesMode() {
+        return mode == Constants.MODE_SHAPES;
     }
-       
+
+    /**
+     * Zistí, či je aktívny sledovací mód.
+     * 
+     * @return true, ak je aktívny sledovací mód, inak false
+     */
+    private boolean isTrackingMode() {
+        return mode == Constants.MODE_TRACKING;
+    }
+    
+    /**
+     * Inicializuje posuvník pre ovládanie videa.
+     * 
+     * @param max maximálna hodnota, počet snímkov videa
+     * @param val aktuálna hodnota, najcastejsie prvý snimok - 0
+     */
     private void initSlider(int max, int val) {
         vidSlider.setMinimum(0);
         vidSlider.setMaximum(max);
         vidSlider.setValue(val);
     }
     
+    /**
+     * Nahrá video do aplikácie. Snímky vo farbe aj šedi uloží do štruktúry VidData.
+     */
     private void openVideo() {        
         JFileChooser fc = new JFileChooser();
         int ret = fc.showOpenDialog(this);
@@ -332,7 +406,7 @@ public final class AppInterface extends JFrame {
                 int frameCnt = frames.getFrameCnt();
                 initSlider(frameCnt - 1, 0);
                 // inicializuj ovladanie videa
-                player = new VidPlayer(frames, canvas, vidSlider);
+                player = new VidPlayer(frames, canvas, vidSlider, buttonPlay);
                 buttonPlay.setPlay(false);
                 // zobraz ovladanie videa
                 enableControls(true);
@@ -340,13 +414,33 @@ public final class AppInterface extends JFrame {
             dialog.setVisible(false);            
         }
     }
-       
+
+    /**
+     * Zapne ovládacie prevky videa a povolí nahrávať a ukladať tvary zo súborov.
+     * 
+     * @param val true pre zapnutie, false pre vypnutie
+     */
     private void enableControls(boolean val) {
         vidControlsPane.setVisible(val);
-        menuItemSave.setEnabled(val);
-        menuItemLoad.setEnabled(val);
+        enableMenuShapePersistance(val);
     }
     
+    /**
+     * Povolí nahrávať a ukladať tvary zo súborov cez položky menu aplikácie.
+     * 
+     * @param val true pre zapnutie, false pre vypnutie
+     */
+    private void enableMenuShapePersistance(boolean val) {
+        menuItemSave.setEnabled(val);
+        menuItemLoad.setEnabled(val);        
+    }
+    
+    /**
+     * Nahrá video zo špecifikovaného súboru do internej štruktúry VidData ako snímky.
+     * 
+     * @param path cesta k súboru s videom
+     * @return false, ak pri nahrávaní dojde ku chybe, inak false
+     */
     private boolean loadVideo(String path) {
         if (path == null || path.isEmpty()) {
             return false;
@@ -355,6 +449,11 @@ public final class AppInterface extends JFrame {
         return VidLoader.load(path, frames);
     }
     
+    /**
+     * V reakcii na posúvnik ovládania videa nastaví snímok s indexom na plátno.
+     * 
+     * @param newPos hodnota posuvníka, značí číslo snímku indexované od 0
+     */
     private void setFrame(int newPos) {
         if (newPos < 0) {
             newPos = 0;
@@ -363,19 +462,26 @@ public final class AppInterface extends JFrame {
         }
 
         Image img = frames.getFrame(newPos);
-        canvas.reset();
         canvas.drawVideoFrame(img);
-        vidSlider.setValue(newPos);
     }
     
+    /**
+     * Krokovanie videa smerom dozadu.
+     */
     private void setFrameRev() {
-        setFrame(frames.getFrameNo() - Constants.FRAME_ADJ_STEP);
+        vidSlider.setValue(frames.getFrameNo() - Constants.FRAME_ADJ_STEP);
     }
     
+    /**
+     * Krokovanie videa smerom dopredu.
+     */
     private void setFrameFwd() {
-        setFrame(frames.getFrameNo() + Constants.FRAME_ADJ_STEP);
+        vidSlider.setValue(frames.getFrameNo() + Constants.FRAME_ADJ_STEP);
     }
     
+    /**
+     * Uloží anotované a potvrdené tvary do súboru.
+     */
     private void saveShapes() {
         if (shapes.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Shape list is empty, there is nothing to save");
@@ -395,6 +501,10 @@ public final class AppInterface extends JFrame {
         }
     }
     
+    /**
+     * Nahrá anotované tvary zo súboru do programu, aby k nim mohli užívatelia
+     * pridať ďalšie, prípadne ich rovno spracovať.
+     */
     private void loadShapes() {        
         if (!shapes.isEmpty()) {
             int res = JOptionPane.showConfirmDialog(null,

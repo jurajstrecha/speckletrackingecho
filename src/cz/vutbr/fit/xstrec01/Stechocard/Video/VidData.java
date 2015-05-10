@@ -4,14 +4,15 @@ import java.awt.Image;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.opencv.core.Mat;
 
 /**
- * Trieda reprezentuje nacitane video. V zozname drzi vsetky snimky videa.
- * Uklada tiez obsluzne informacie ako rozmery, celkovy pocet snimkov, framerate
- * a cislo snimku, ktory je zobrazeny na platne, teda snimok, o ktory aplikacia
- * naposledy ziadala.
+ * Trieda reprezentuje načítané video. V zozname drží všetky snímky videa.
+ * Ukladá tiež obslužné informácie ako rozmery videa, počet snímkov, framerate
+ * a číslo snímku, ktorý je zobrazený na plátne, teda snímok, o ktorý aplikácia
+ * naposledy žiadala.
  * 
- * @author Bc. Juraj Strecha, xstrec01@stud.fit.vutbr.cz
+ * @author Juraj Strecha, xstrec01
  */
 public final class VidData {
     private double framerate;
@@ -19,14 +20,18 @@ public final class VidData {
     private double frameHeight;
     private int frameCnt;
     private final ArrayList<Image> frames;
+    private final ArrayList<Mat> grayFrames;
     private int frameNo;
+    private boolean tracking;
     
     private static VidData instance = null;
     
     private static final Logger logger = Logger.getLogger(VidData.class.getName());
     
     private VidData() {
-        this.frames = new ArrayList<>();
+        frames = new ArrayList<Image>();
+        grayFrames = new ArrayList<Mat>();
+        tracking = false;
     }
     
     public static VidData getInstance() {
@@ -69,19 +74,28 @@ public final class VidData {
     }
     
     /**
-     * Vrati snimok, ktoreho poradove cislo
+     * Vráti snímok, ktorého poradové číslo je aktuálne nastavené.
      * 
-     * @return Snimok videa
+     * @return snímok videa
      */
     public Image getCurrentFrame() {
         return frames.get(frameNo);
     }
     
     /**
-     * Vrati i-ty snimok. Indexovane od 0.
+     * Vráti šedotónový snímok, ktorého poradové číslo je aktuálne nastavené.
      * 
-     * @param i Cislo snimku
-     * @return Snimok na i-tom indexe, ak existuje, inak null
+     * @return snímok videa
+     */
+    public Mat getCurrentGrayFrame() {
+        return grayFrames.get(frameNo);
+    }
+    
+    /**
+     * Vráti i-ty snímok. Indexované od 0.
+     * 
+     * @param i číslo snímku
+     * @return snímok na i-tom indexe, ak existuje, inak null
      */
     public Image getFrame(int i) {
         if (i < 0 || i >= frames.size()) {
@@ -90,6 +104,21 @@ public final class VidData {
         }
         frameNo = i;            
         return frames.get(i);
+    }
+    
+    /**
+     * Vráti i-ty šedotónový snímok. Indexované od 0.
+     * 
+     * @param i číslo snímku
+     * @return snímok na i-tom indexe, ak existuje, inak null
+     */
+    public Mat getGrayFrame(int i) {
+        if (i < 0 || i >= frames.size()) {
+            logger.log(Level.SEVERE, "Index {0} out of range, max: {1}", new Object[]{i, frameCnt});
+            return null;
+        }
+   
+        return grayFrames.get(i);        
     }
     
     public void reset() {
@@ -102,9 +131,9 @@ public final class VidData {
     }
     
     /**
-     * Vlozi novy snimok do zoznamu. Pouziva sa pri nahravani videa.
+     * Vloží nový snímok do zoznamu. Používa sa pri nahrávaní videa.
      * 
-     * @param frame Snimok, ktory bude pridany do zoznamu
+     * @param frame snímok, ktorý bude pridaný do zoznamu
      */
     public void addFrame(Image frame) {
         if (frame == null) {
@@ -115,11 +144,25 @@ public final class VidData {
             frameCnt++;
         }
     }
+    
+    /**
+     * Vloží nový šedotónový snímok do zoznamu. Používa sa pri nahrávaní videa.
+     * 
+     * @param frame snímok, ktorý bude pridaný do zoznamu
+     */
+    public void addGrayFrame(Mat frame) {
+        if (frame == null) {
+            logger.log(Level.SEVERE, "Adding empty frame");
+        }
+        else {
+            grayFrames.add(frame);
+        }
+    }
 
     /**
-     * Nastavi zoznam snimkov na poskytnuty zoznam.
+     * Nastaví zoznam snímkov na poskytnutý zoznam.
      * 
-     * @param newFrames Zoznam novych snimkov
+     * @param newFrames zoznam nových snímkov
      */
     public void setFrames(ArrayList<Image> newFrames) {
         if (newFrames == null || newFrames.size() < 1) {
@@ -135,10 +178,10 @@ public final class VidData {
     }
     
     /**
-     * Vrati dalsi snimok v poradi. Po dosiahnuti konca videa vracia posledny
-     * snimok.
+     * Vráti ďalší snímok v poradí. Po dosiahnutí konca videa vracia posledný
+     * snímok.
      * 
-     * @return Snimok videa
+     * @return snímok videa
      */
     public Image getNextFrame() {
         if (frameNo < frameCnt) {
@@ -151,4 +194,6 @@ public final class VidData {
             return getCurrentFrame();
         }
     }
+    
+    
 }
