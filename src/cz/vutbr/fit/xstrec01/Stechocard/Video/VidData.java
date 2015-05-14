@@ -22,7 +22,6 @@ public final class VidData {
     private final ArrayList<Image> frames;
     private final ArrayList<Mat> grayFrames;
     private int frameNo;
-    private boolean tracking;
     
     private static VidData instance = null;
     
@@ -31,7 +30,6 @@ public final class VidData {
     private VidData() {
         frames = new ArrayList<Image>();
         grayFrames = new ArrayList<Mat>();
-        tracking = false;
     }
     
     public static VidData getInstance() {
@@ -195,5 +193,13 @@ public final class VidData {
         }
     }
     
+    /**
+     * Overí, či bolo načítané video.
+     * 
+     * @return true, ak bolo video načítané, inak false
+     */
+    public boolean isLoaded() {
+        return !frames.isEmpty();
+    }
     
 }

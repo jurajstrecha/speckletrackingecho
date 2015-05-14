@@ -3,6 +3,7 @@ package cz.vutbr.fit.xstrec01.Stechocard.Video;
 import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
 import cz.vutbr.fit.xstrec01.Stechocard.GUI.Canvas;
 import cz.vutbr.fit.xstrec01.Stechocard.GUI.PlayButton;
+import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.PCA;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Utils;
 import java.awt.Image;
 import java.awt.Point;
@@ -46,7 +47,7 @@ public class VidPlayer implements Runnable {
         pts.alloc(ctrlPts.size());        
         Utils.ptsToMatOfPts2f(ctrlPts, pts);
         MatOfPoint2f nextPts = new MatOfPoint2f();
-        nextPts.alloc(ctrlPts.size());        
+        nextPts.alloc(ctrlPts.size());
         MatOfByte state = new MatOfByte();
         Image frame;
         Mat grayImg;
@@ -60,8 +61,16 @@ public class VidPlayer implements Runnable {
                 nextGrayImg = vidData.getCurrentGrayFrame();
                 if (!ctrlPts.isEmpty()) {
                     // =============== Lucas-Kanade optical flow ===============
-                    Video.calcOpticalFlowPyrLK(grayImg, nextGrayImg, pts, nextPts, state, new MatOfFloat());
+                    Video.calcOpticalFlowPyrLK(grayImg,
+                                               nextGrayImg,
+                                               pts,
+                                               nextPts,
+                                               state,
+                                               new MatOfFloat());
                 }
+                
+                PCA.getInstance().getPlausibleShape(nextPts);
+                
                 Utils.matOfPts2fToPts(nextPts, ctrlPts);
                 nextPts.copyTo(pts);
                 canvas.drawVideoFrame(frame);
@@ -71,6 +80,12 @@ public class VidPlayer implements Runnable {
             
             frameNo = vidData.getFrameNo();
             slider.setValue(frameNo);
+            
+            try {
+                Thread.sleep(sleepTime);
+            } catch (InterruptedException ex) {
+                break;
+            }
         }
         
         if (frameNo >= vidData.getFrameCnt() - 1) {
@@ -87,6 +102,12 @@ public class VidPlayer implements Runnable {
         playing = val;
     }
     
+    /**
+     * Poznačí, či je aplikácia v móde sledovania pohybu. Ak nie je nastavené,
+     * prehrávač nesleduje body, iba prehráva snímky videa.
+     * 
+     * @param val true, ak je zapnutý mód sledovania bodov, inak false
+     */
     public void setTracking(boolean val) {
         tracking = val;
     }

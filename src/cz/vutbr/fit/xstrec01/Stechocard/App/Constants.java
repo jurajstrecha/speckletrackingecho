@@ -16,41 +16,54 @@ public class Constants {
     public static final int MODE_SHAPES = 1;
     public static final int MODE_TRACKING = 2;
     
-    // OpenCV konstanty chybajuce v Java wrapperoch
+    // množstvo zmien, ktoré chceme metódou PCA popísať, ovplyvňuje počet
+    // eigenvektorov, ktoré vráti Core.PCACompute
+    public static final double PCA_VARIANCE_TO_RETAIN  = 0.98;
+   
+    // Java OpenCV wrapper neumožňuje výpočet eigenvalues pomocou PCA, musí sa
+    // počítať pomocou Core.eigen a výsledné hodnoty rozptylu sú násobne väčšie
+    // ako by boli pri výpočte pomocou PCA, preto sa musí rozptyl upraviť,
+    // hodnota je nastavená experimentálne, nie je matematicky overená
+    public static final double EIGENVALUE_COMPENSATION = 0.5;
+    
+    // OpenCV konštanty chýbajuce v Java wrapperoch
     public static final int CV_CAP_PROP_FPS = 5;
     
-    // farby prvkov uzivatelskeho rozhrania a prvkov na platne
+    // farby prvkov užívateľského rozhrania a prvkov na plátne
     public static final Color BACKGROUND_COLOR = new Color(52, 73, 94);
     public static final Color CANVAS_COLOR = new Color(236, 240, 241);
     public static final Color SPLINE_COLOR = new Color(155, 89, 182);
     public static final Color TRANSLUCENT_CANVAS_COLOR = new Color(0, 0, 0, 100);
     public static final Color CONTROL_POINT_COLOR = new Color(211, 84, 0);
     
-    // konstanty pre nastavenie GUI
+    // konštanty pre nastavenie GUI
     public static final Dimension APP_WINDOW_MIN_SIZE = new Dimension(840, 620);
     public static final Dimension CANVAS_SIZE = new Dimension(640, 480);
-    public static final Dimension CTRL_BUTTONS_SIZE = new Dimension(110, 30);
+    public static final Dimension CTRL_BUTTONS_SIZE = new Dimension(150, 30);
     public static final Dimension CTRL_BUTTONS_GAP = new Dimension(0, 10);
     public static final Dimension SLIDER_DIM = new Dimension(550, 20);
     public static final Dimension LOADING_DIALOG_DIM = new Dimension(300, 200);
+    public static final Dimension HELP_WINDOW_SIZE = new Dimension(800,480);
 
-    // rozmer rieseneho problemu, pre 2D STE bude vzdy 2
+    // rozmer riešeného problému, pre 2D STE bude vždy 2
     public static final int SPACE_DIMENSION = 2;
 
-    // rozmery znacky vyznaceneho bodu v obraze v pixeloch
+    // rozmery značky vyznačeného bodu v obraze v pixeloch
     public static final int CROSS_VERT_DIAMETER = 4;
     public static final int CROSS_HORIZ_DIAMETER = 4;
-    // hrubka ciary pre vykresleny spline
+    // hrúbka čiary pre vykresleny spline
     public static final int SPLINE_THICKNESS = 2;
     
-    // pocet bodov intervalu pri vypocte spline
+    // počet bodov intervalu pri výpočte spline
     public static final int SPLINE_SAMPLES_PER_SPAN = 20;
-    // pocet intervalov, na kolko bude rozdeleny spline pre ziskanie rovnomerne
-    // rozlozenych bodov, pocet bodov je vzdy SPLINE_DIV_INTERVALS + 1
+    // počet intervalov, na koľko bude rozdelený spline pre získanie rovnomerne
+    // rozloženych bodov, počet bodov je vždy SPLINE_DIV_INTERVALS + 1
     public static final int SPLINE_DIV_INTERVALS = 10;
     
-    // velkost kroku (v snimkoch) tlacidiel GUI << a >>
+    // veľkost kroku (v snímkoch) tlačidiel GUI '<<' a '>>'
     public static final int FRAME_ADJ_STEP = 5;
-    // zvysovanie hodnoty spolamuje prehravanie, znizovanie zrychluje
+    // zvyšovanie hodnoty spomaľuje prehrávanie, znižovanie zrýchľuje
     public static final int FRAMERATE_ADJUSTMENT = 400;
+    // text indikátoru počtu anotovaných tvarov
+    public static final String SHAPE_CNT_LABEL_TEXT = "Shapes: ";
 }

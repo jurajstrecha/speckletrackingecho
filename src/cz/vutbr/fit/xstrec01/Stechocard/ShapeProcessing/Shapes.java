@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  * Dátová štruktúra uchováva body, ktoré reprezentujú užívate+lom anotovaný tvar.
@@ -142,25 +143,23 @@ public final class Shapes extends ArrayList<Shape>{
                 JSONParser parser = new JSONParser();                
                 Object o = parser.parse(br);
                 JSONArray jsonShapes = (JSONArray)o;
-                for (int i = 0; i < jsonShapes.size(); i++) {
-                    JSONObject jsonShape = (JSONObject)jsonShapes.get(i);
+                for (Object jsonShape1 : jsonShapes) {
+                    JSONObject jsonShape = (JSONObject) jsonShape1;
                     JSONArray jsonAnnotated = (JSONArray)jsonShape.get("annotated");
                     JSONArray jsonSpline = (JSONArray)jsonShape.get("spline");
                     JSONArray point;
                     long x, y;
-                    
                     Shape shape = new Shape();
-                    for (int j = 0; j < jsonAnnotated.size(); j++) {
-                        point = (JSONArray)jsonAnnotated.get(j);
+                    for (Object jsonAnnotated1 : jsonAnnotated) {
+                        point = (JSONArray) jsonAnnotated1;
                         x = (long)point.get(0);
                         y = (long)point.get(1);
                         // JSON Simple dokáže dekódovať iba do long, pre vytvorenie
                         // Point potrebujeme int
                         shape.addAnnotatedPoint(new Point((int)x, (int)y));
                     }
-                    
-                    for (int j = 0; j < jsonSpline.size(); j++) {
-                        point = (JSONArray)jsonSpline.get(j);
+                    for (Object jsonSpline1 : jsonSpline) {
+                        point = (JSONArray) jsonSpline1;
                         x = (long)point.get(0);
                         y = (long)point.get(1);
                         shape.addSplinePoint(new Point((int)x, (int)y));
@@ -168,13 +167,11 @@ public final class Shapes extends ArrayList<Shape>{
                     shapes.add(shape);
                 }                
             } else {
-                System.out.println("Unable to open file for read: {0}" + filename);
+                System.err.println("Unable to open file for read: {0}" + filename);
             }
-        } catch (Exception ex) {
-            System.out.println("loadShapes: " + ex.getMessage());
-        } finally {
-
-        }        
+        } catch (IOException | ParseException ex) {
+            System.err.println("loadShapes: " + ex.getMessage());
+        }      
         
         return true;
     }

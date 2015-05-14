@@ -11,7 +11,9 @@ import java.awt.Point;
  * @author Juraj Strecha, xstrec01
  */
 public final class Shape {
+    // body, ktoré pridáva užívateľ klikaním na plátno/snámok videa; anotované body
     ArrayList<Point> annotatedPoints;
+    // množina bodov spline krivky, pomocou nich sa vykresľuje spline
     ArrayList<Point> splinePoints;
     
     public Shape() {

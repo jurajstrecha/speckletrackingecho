@@ -5,7 +5,7 @@ import javax.swing.SwingUtilities;
 import org.opencv.core.Core;
 
 /**
- * Hlavna trieda nacita OpenCV kniznicu a spusti aplikaciu
+ * Hlavná trieda načíta OpenCV knižnicu a spustí aplikáciu
  * 
  * @author Juraj Strecha, xstrec01
  */

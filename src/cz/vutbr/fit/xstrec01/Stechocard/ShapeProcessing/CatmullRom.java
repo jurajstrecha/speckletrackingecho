@@ -61,7 +61,7 @@ public class CatmullRom {
      * @param t relatívny parameter vnútri intervalu
      * @return body výsledného splajnu
      */
-    public static Point CREquation(Point p1, Point p2, Point p3, Point p4, double t) {       
+    private static Point CREquation(Point p1, Point p2, Point p3, Point p4, double t) {       
         double t2 = t * t;
         double t3 = t2 * t;
         

@@ -1,6 +1,7 @@
 package cz.vutbr.fit.xstrec01.Stechocard.GUI;
 
 import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
+import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.CatmullRom;
 import java.awt.BasicStroke;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -51,7 +52,10 @@ public final class Canvas extends JPanel {
             g.drawImage(img, getXOffset(), getYOffset(), this);
         }
         drawControlPoints(g);
-//        drawSplinePoints(g);
+        if (tracking) {      
+            setSplinePts(CatmullRom.calculateSpline(controlPts));
+            drawSplinePoints(g);
+        }
     }
     
     /**
@@ -156,6 +160,11 @@ public final class Canvas extends JPanel {
     public void setControlPts(ArrayList<Point> pts) {
         controlPts.clear();
         controlPts.addAll(pts);
+    }
+    
+    public void setSplinePts(ArrayList<Point> pts) {
+        splinePoints.clear();
+        splinePoints.addAll(pts);
     }
     
     /**

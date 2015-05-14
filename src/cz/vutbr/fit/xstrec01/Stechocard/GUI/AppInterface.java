@@ -1,6 +1,9 @@
 package cz.vutbr.fit.xstrec01.Stechocard.GUI;
 
 import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
+import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.CatmullRom;
+import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.PCA;
+import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Procrustes;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Shape;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Shapes;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidData;
@@ -8,6 +11,7 @@ import cz.vutbr.fit.xstrec01.Stechocard.Video.VidLoader;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidPlayer;
 import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.Frame;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Point;
@@ -15,6 +19,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -23,6 +28,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -30,8 +36,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSlider;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.opencv.core.Mat;
 
 /**
  * Grafické užívateľské rozhranie. Riadenie udalostí generovaných prvkami
@@ -48,6 +56,7 @@ public final class AppInterface extends JFrame {
     private int mode;
     JMenuItem menuItemSave;
     JMenuItem menuItemLoad;
+    ButtonGroup group;
     private JPanel vidControlsPane;
     private PlayButton buttonPlay;
     private JSlider vidSlider;
@@ -55,6 +64,8 @@ public final class AppInterface extends JFrame {
     private final JDialog dialog;
     JPanel trackingControls;
     JPanel annotControls;
+    boolean generated;
+    JLabel shapeCntLabel;
     
     public AppInterface() {
         super(Constants.APP_NAME);
@@ -69,23 +80,28 @@ public final class AppInterface extends JFrame {
         createComponents(getContentPane());
         
         // dialógové okno sa zobrazí pri načítavaní videa
-        optionPane = new JOptionPane("Please wait", JOptionPane.INFORMATION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{}, null);
+        optionPane = new JOptionPane("Please wait", JOptionPane.INFORMATION_MESSAGE, JOptionPane.DEFAULT_OPTION);
         dialog = new JDialog();
+        dialog.setContentPane(optionPane);
         initLoadingDialog();
         
-        // ovládanie videa, vypnuté, kým nie je  video načítané
+        // ovládanie videa, vypnuté, kým nie je video načítané
         enableControls(false);
         // počiatočným módom je anotovanie tvarov
         mode = Constants.MODE_SHAPES;
         
         // dátové štruktúry - tvary a snímky načítaného videa
-        shapes = new Shapes();
+        shapes = new Shapes();      
         frames = VidData.getInstance();
+        
+        // poznačí, že boli anotované tvary v aplikácii zarovnané pomocou
+        // procrustovej analýzy a bola na nich vykonaná analýza hlavných komponent
+        // (PCA)
+        generated = false;
 
         pack();
         setVisible(true);
         setLocationRelativeTo(null);
-        openVideo();
     }
 
     /**
@@ -164,7 +180,9 @@ public final class AppInterface extends JFrame {
         annotControls = new JPanel();
         annotControls.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         annotControls.setLayout(new BoxLayout(annotControls ,BoxLayout.Y_AXIS));
-        JButton buttonAddShape = addButton("Add Shape", annotControls);
+        
+        // tlačidlo pre potvrdenie anotovaného tvaru, ten sa uloží do zoznamu
+        JButton buttonAddShape = addButton("Confirm Shape", annotControls);
         buttonAddShape.setMaximumSize(Constants.CTRL_BUTTONS_SIZE);
         buttonAddShape.addActionListener(new ActionListener() {
             
@@ -179,7 +197,8 @@ public final class AppInterface extends JFrame {
                     shape.addAnnotatedPoints(controlPts);
                     if (shapes.serializeShape(shape)) {
                         canvas.reset();
-                        System.out.println("Shape stored. Total: " + shapes.size() + " shapes.");
+                        generated = false;
+                        shapeCntLabel.setText(Constants.SHAPE_CNT_LABEL_TEXT + shapes.size());
                     } else {
                         System.err.println("Shape storing failed");
                     }
@@ -187,8 +206,10 @@ public final class AppInterface extends JFrame {
             }
             
         });
+        
+        // zruší aktuálne vyznačené body zatiaľ nepotvrdeného tvaru
         annotControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
-        JButton buttonReset = addButton("Reset", annotControls);
+        JButton buttonReset = addButton("Reset Shape", annotControls);
         buttonReset.setMaximumSize(Constants.CTRL_BUTTONS_SIZE);
         buttonReset.addActionListener(new ActionListener() {
             
@@ -198,6 +219,44 @@ public final class AppInterface extends JFrame {
             }
             
         });
+        
+        // zobrazenie počtu anotovaných tvarov v zozname, naklikaných alebo načítaných
+        // zo súboru
+        annotControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
+        shapeCntLabel = new JLabel(Constants.SHAPE_CNT_LABEL_TEXT + 0, SwingConstants.CENTER);
+        shapeCntLabel.setMaximumSize(Constants.CTRL_BUTTONS_SIZE);
+        annotControls.add(shapeCntLabel);
+
+        annotControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
+        annotControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
+        annotControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
+        JButton buttonGenerate = addButton("Generate Model", annotControls);
+        buttonGenerate.setMaximumSize(Constants.CTRL_BUTTONS_SIZE);
+        buttonGenerate.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (!frames.isLoaded()) {
+                    JOptionPane.showMessageDialog(Frame.getFrames()[0],
+                                                  "Load a video first");
+
+                } else if (shapes.isEmpty()) {
+                    JOptionPane.showMessageDialog(Frame.getFrames()[0],
+                                                  "Annotate or load shapes before generating a model");
+                } else if (shapes.size() == 1) {
+                    JOptionPane.showMessageDialog(Frame.getFrames()[0],
+                                                  "More than one shape needed for generating the model");                    
+                } else if (!generated) {
+                    generateModel();
+                    generated = true;
+                    setMode(Constants.MODE_TRACKING);
+                } else {
+                    setMode(Constants.MODE_TRACKING);
+                }
+            }
+            
+        });
+        
         annotControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
         JPanel controlsHolder = new JPanel();
         controlsHolder.add(annotControls);
@@ -206,7 +265,9 @@ public final class AppInterface extends JFrame {
         trackingControls = new JPanel();
         trackingControls.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         trackingControls.setLayout(new BoxLayout(trackingControls ,BoxLayout.Y_AXIS));
-        JButton buttonSetTrackingPts = addButton("Tracking", trackingControls);
+        
+        // tlačidlo potvrdí vyznačený tvar, ktorý sa bude sledovať
+        JButton buttonSetTrackingPts = addButton("Set tracking", trackingControls);
         buttonSetTrackingPts.setMaximumSize(Constants.CTRL_BUTTONS_SIZE);
         buttonSetTrackingPts.addActionListener(new ActionListener() {
 
@@ -214,6 +275,8 @@ public final class AppInterface extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 // ak nebol označený žiaden bod na sledovanie
                 if (!canvas.getControlPts().isEmpty()) {
+                    ArrayList<Point> spline = CatmullRom.calculateSpline(canvas.getControlPts());
+                    canvas.setControlPts(CatmullRom.divideSpline(spline, Constants.SPLINE_DIV_INTERVALS));
                     canvas.setTracking(true);
                     player.setTracking(true);
                 }
@@ -222,6 +285,7 @@ public final class AppInterface extends JFrame {
         });
         trackingControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
         
+        // tlačidlo zruší aktuálne sledovaný tvar, vymaže body z plátna
         JButton buttonTrackingReset = addButton("Reset", trackingControls);
         buttonTrackingReset.setMaximumSize(Constants.CTRL_BUTTONS_SIZE);
         buttonTrackingReset.addActionListener(new ActionListener() {
@@ -239,6 +303,15 @@ public final class AppInterface extends JFrame {
         trackingControls.setVisible(false);
         
         pane.add(controlsHolder, BorderLayout.EAST);        
+    }
+    
+    /**
+     * Vygeneruje model z naanotovaných alebo načítaných tvarov.
+     */
+    private void generateModel() {
+        ArrayList<Mat> alignedShapes = Procrustes.analyze(shapes);
+        PCA pca = PCA.getInstance();
+        pca.init(alignedShapes);
     }
     
     /**
@@ -316,7 +389,7 @@ public final class AppInterface extends JFrame {
         JMenu switchModeMenu = new JMenu("Mode");
         menuBar.add(switchModeMenu);
         
-        ButtonGroup group = new ButtonGroup();
+        group = new ButtonGroup();
         
         JRadioButtonMenuItem menuItemShapes = new JRadioButtonMenuItem("Annotate Shapes");
         menuItemShapes.addActionListener(new ActionListener(){
@@ -336,14 +409,31 @@ public final class AppInterface extends JFrame {
         menuItemTracking.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                setMode(Constants.MODE_TRACKING);
-                canvas.reset();
-                annotControls.setVisible(false);
-                trackingControls.setVisible(true);
+                if (generated)  {
+                    setMode(Constants.MODE_TRACKING);
+                } else {
+                    JOptionPane.showMessageDialog(Frame.getFrames()[0], "Generate a model before the tracking");
+                    Enumeration elements = group.getElements();
+                    JRadioButtonMenuItem b = (JRadioButtonMenuItem)elements.nextElement();
+                    b.setSelected(true);
+                }
             }            
         });
         group.add(menuItemTracking);
         switchModeMenu.add(menuItemTracking);
+        
+        JMenu helpMenu = new JMenu("Help");
+        menuBar.add(helpMenu);
+        JMenuItem menuItemHelp = new JMenuItem("Manual");
+        menuItemHelp.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new HelpWindow();
+            }
+            
+        });
+        helpMenu.add(menuItemHelp);
         
         setJMenuBar(menuBar);
     }
@@ -354,6 +444,11 @@ public final class AppInterface extends JFrame {
      * @param mode 
      */
     private void setMode(int mode) {
+        if (isTrackingMode()) {
+            canvas.setTracking(false);
+        } else {
+            setTrackingMode();
+        }
         this.mode = mode;
     }
     
@@ -388,11 +483,25 @@ public final class AppInterface extends JFrame {
     }
     
     /**
+     * Nastaví prostredie a príznaky pre mód sledovania.
+     * 
+     */
+    private void setTrackingMode() {
+        Enumeration elements = group.getElements();
+        JRadioButtonMenuItem b = (JRadioButtonMenuItem)elements.nextElement();
+        b= (JRadioButtonMenuItem)elements.nextElement();
+        b.setSelected(true);
+        canvas.reset();
+        annotControls.setVisible(false);
+        trackingControls.setVisible(true);
+    }
+    
+    /**
      * Nahrá video do aplikácie. Snímky vo farbe aj šedi uloží do štruktúry VidData.
      */
     private void openVideo() {        
         JFileChooser fc = new JFileChooser();
-        int ret = fc.showOpenDialog(this);
+        int ret = fc.showDialog(this, "Open Video");
         if (ret == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
             dialog.setVisible(true);
@@ -487,7 +596,7 @@ public final class AppInterface extends JFrame {
             JOptionPane.showMessageDialog(null, "Shape list is empty, there is nothing to save");
         } else {
             JFileChooser fc = new JFileChooser();
-            int ret = fc.showSaveDialog(this);
+            int ret = fc.showDialog(this, "Save shapes");
             if (ret == JFileChooser.APPROVE_OPTION) {
                 File file = fc.getSelectedFile();
                 String filename = file.getPath();
@@ -517,14 +626,15 @@ public final class AppInterface extends JFrame {
         }
 
         JFileChooser fc = new JFileChooser();
-        int ret = fc.showOpenDialog(this);
+        int ret = fc.showDialog(this, "Load shapes");
         if (ret == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
             String filename = file.getPath();
             // uloz vsetky naklikane tvary do JSON suboru s uzivatelovym nazvom
             if (Shapes.loadShapes(shapes, filename)) {
-                JOptionPane.showMessageDialog(null, "Shapes loaded successfully");
-                System.out.println("Shapes: " + shapes.size());
+                //JOptionPane.showMessageDialog(null, "Shapes loaded successfully");
+                shapeCntLabel.setText(Constants.SHAPE_CNT_LABEL_TEXT + shapes.size());
+                generated = false;
             } else {
                 JOptionPane.showMessageDialog(null, "Loading shapes failed");
             }
