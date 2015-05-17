@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Scalar;
 
 /**
@@ -14,6 +15,7 @@ import org.opencv.core.Scalar;
  * @author Juraj Strecha, xstrec01
  */
 public final class Procrustes {
+    private Procrustes(){}
     
     /**
      * Procrustovou analýzou zarovná tvary na seba tak, aby ich vzdialenosť
@@ -145,17 +147,7 @@ public final class Procrustes {
         Mat H = new Mat(Constants.SPACE_DIMENSION,
                         Constants.SPACE_DIMENSION,
                         CvType.CV_64F);
-        
-        Mat w = new Mat(Constants.SPACE_DIMENSION,
-                        Constants.SPACE_DIMENSION,
-                        CvType.CV_64F);
-        Mat u = new Mat(Constants.SPACE_DIMENSION,
-                        Constants.SPACE_DIMENSION,
-                        CvType.CV_64F);
-        Mat vt = new Mat(Constants.SPACE_DIMENSION,
-                         Constants.SPACE_DIMENSION,
-                         CvType.CV_64F);
-        
+       
         Mat R = new Mat(Constants.SPACE_DIMENSION,
                         Constants.SPACE_DIMENSION,
                         CvType.CV_64F);
@@ -173,23 +165,12 @@ public final class Procrustes {
         
         // výpočet kovariančnej matice
         Core.gemm(shapeCenteredForH.t(), meanCenteredForH, 1, new Mat(), 0, H);
-        
-        // SVD dekompozícia
-        Core.SVDecomp(H, w, u, vt);
-        
+
         // výpočet rotačnej matice R
-        Core.gemm(vt.t(), u.t(), 1, new Mat(), 0, R);
-        // úprava v prípade negatívneho determinantu
-        if (Core.determinant(R) < 0) {
-            R.put(0, 0, R.get(1, 0)[0] * -1);
-            R.put(0, 1, R.get(1, 1)[0] * -1);
-        }
-        
+        getRotationMat(H, R);
+
         // výpočet translačného vektoru t
-        t.put(0, 0, meanCentroid[0] - (R.get(0, 0)[0] * shapeCentroid[0] +
-                                       R.get(0, 1)[0] * shapeCentroid[1]));
-        t.put(1, 0, meanCentroid[1] - (R.get(1, 0)[0] * shapeCentroid[0] +
-                                       R.get(1, 1)[0] * shapeCentroid[1]));
+        getTranslationVec(meanCentroid, shapeCentroid, R, t);
 
         // rotácia + translácia, B = R*A+t, vznikne výsledné zarovnanie
         for (int i = 0; i < shape.rows(); i++) {
@@ -199,6 +180,50 @@ public final class Procrustes {
         }
     }
     
+    /**
+     * Výpočet rotačnej matice pre najlepšie zarovnanie tvaru 1 na tvar 2.
+     * 
+     * @param covarMat kovariančná matica z oboch tvarov
+     * @param rotationMat výsledná rotačná matica
+     */
+    public static void getRotationMat(Mat covarMat, Mat rotationMat) {
+        Mat u = new Mat(Constants.SPACE_DIMENSION,
+                        Constants.SPACE_DIMENSION,
+                        CvType.CV_64F);
+        Mat vt = new Mat(Constants.SPACE_DIMENSION,
+                         Constants.SPACE_DIMENSION,
+                         CvType.CV_64F);
+
+        // SVD dekompozícia
+        Core.SVDecomp(covarMat, new Mat(), u, vt);
+        
+        // výpočet rotačnej matice R
+        Core.gemm(vt.t(), u.t(), 1, new Mat(), 0, rotationMat);
+        
+        // úprava v prípade negatívneho determinantu
+        if (Core.determinant(rotationMat) < 0) {
+            rotationMat.put(0, 0, rotationMat.get(1, 0)[0] * -1);
+            rotationMat.put(0, 1, rotationMat.get(1, 1)[0] * -1);
+        }
+    }
+    
+    /**
+     * Vráti translačné parametre v podobe vektoru. Pomocou nich dosiahneme najlepšie
+     * posunutie tvaru tak, aby sme minimalizovali Euklidovu vzdialenosť vzhľadom
+     * k vzorovému tvaru.
+     * 
+     * @param shape1Centroid ťažisko tvaru 1
+     * @param shape2Centroid ťažisko tvaru 2
+     * @param rotationMat rotačná matica
+     * @param translationVec výsledný vektor posunu
+     */
+    public static void getTranslationVec(double []shape1Centroid, double []shape2Centroid, Mat rotationMat, Mat translationVec) {
+        // výpočet translačného vektoru t
+        translationVec.put(0, 0, shape1Centroid[0] - (rotationMat.get(0, 0)[0] * shape2Centroid[0] +
+                                       rotationMat.get(0, 1)[0] * shape2Centroid[1]));
+        translationVec.put(1, 0, shape1Centroid[1] - (rotationMat.get(1, 0)[0] * shape2Centroid[0] +
+                                       rotationMat.get(1, 1)[0] * shape2Centroid[1]));
+    }
     
     /**
      * Výpočet priemerného tvaru z množiny tvarov.
@@ -295,19 +320,9 @@ public final class Procrustes {
         }
         
         ArrayList<Point> pts = shape.getSplinePoints();
-        if (pts != null && pts.size() > 1) {
-            if (pts.size() != mat.rows()) {
-                return;
-            }
-            Point p;
-            for (int i = 0; i < pts.size(); i++) {
-                p = pts.get(i);
-                mat.put(i, 0, p.getX());
-                mat.put(i, 1, p.getY());
-            }
-        }
+        MatUtils.ptsToMat(pts, mat);
     }
-    
+           
     /**
      * Vypočíta bod ťažiska zadaného tvaru.
      * 

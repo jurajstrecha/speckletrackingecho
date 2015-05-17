@@ -3,6 +3,7 @@ package cz.vutbr.fit.xstrec01.Stechocard.GUI;
 import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.CatmullRom;
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -22,6 +23,7 @@ import javax.swing.JPanel;
 public final class Canvas extends JPanel {    
     private final ArrayList<Point> controlPts;
     private final ArrayList<Point> splinePoints;
+    public final ArrayList<Point> anotherPoints;
     private boolean tracking;
     
     private Image img;
@@ -32,7 +34,8 @@ public final class Canvas extends JPanel {
         super();
         controlPts = new ArrayList<Point>();
         splinePoints = new ArrayList<Point>();
-        
+        anotherPoints = new ArrayList<Point>();
+                
         addMouseListener(new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent me) {
@@ -52,8 +55,8 @@ public final class Canvas extends JPanel {
             g.drawImage(img, getXOffset(), getYOffset(), this);
         }
         drawControlPoints(g);
-        if (tracking) {      
-            setSplinePts(CatmullRom.calculateSpline(controlPts));
+        if (tracking) {
+            drawAnotherPoints(g);
             drawSplinePoints(g);
         }
     }
@@ -67,6 +70,29 @@ public final class Canvas extends JPanel {
         if (!controlPts.isEmpty()) {
             for (Point p: controlPts) {
                 g.setColor(Constants.CONTROL_POINT_COLOR);
+                int x = (int)Math.round(p.getX());
+                int y = (int)Math.round(p.getY());
+                g.drawLine(x + Constants.CROSS_HORIZ_DIAMETER, y - 1,
+                           x - Constants.CROSS_HORIZ_DIAMETER, y - 1);
+                g.drawLine(x + Constants.CROSS_HORIZ_DIAMETER, y,
+                           x - Constants.CROSS_HORIZ_DIAMETER, y);
+                g.drawLine(x + Constants.CROSS_HORIZ_DIAMETER, y + 1,
+                           x - Constants.CROSS_HORIZ_DIAMETER, y + 1);
+
+                g.drawLine(x - 1, y + Constants.CROSS_VERT_DIAMETER,
+                           x - 1, y - Constants.CROSS_VERT_DIAMETER);
+                g.drawLine(x, y + Constants.CROSS_VERT_DIAMETER,
+                           x, y - Constants.CROSS_VERT_DIAMETER);
+                g.drawLine(x + 1, y + Constants.CROSS_VERT_DIAMETER,
+                           x + 1, y - Constants.CROSS_VERT_DIAMETER);
+            }
+        } 
+    }
+    
+    private void drawAnotherPoints(Graphics g) {
+        if (!anotherPoints.isEmpty()) {
+            for (Point p: anotherPoints) {
+                g.setColor(Color.GREEN);
                 int x = (int)Math.round(p.getX());
                 int y = (int)Math.round(p.getY());
                 g.drawLine(x + Constants.CROSS_HORIZ_DIAMETER, y - 1,
@@ -114,9 +140,6 @@ public final class Canvas extends JPanel {
      */
     public void drawVideoFrame(Image img) {
         this.img = img;
-        if (!tracking) {
-            reset();
-        }
         repaint();
     }
     
@@ -176,5 +199,9 @@ public final class Canvas extends JPanel {
      */
     public void setTracking(boolean val) {
         tracking = val;
+    }
+    
+    public boolean isTracking() {
+        return tracking;
     }
 }

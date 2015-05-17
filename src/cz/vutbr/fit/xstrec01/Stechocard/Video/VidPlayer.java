@@ -4,7 +4,8 @@ import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
 import cz.vutbr.fit.xstrec01.Stechocard.GUI.Canvas;
 import cz.vutbr.fit.xstrec01.Stechocard.GUI.PlayButton;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.PCA;
-import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Utils;
+import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.MatUtils;
+import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.TrackedShape;
 import java.awt.Image;
 import java.awt.Point;
 import java.util.ArrayList;
@@ -21,65 +22,37 @@ import org.opencv.video.Video;
  *
  * @author Juraj Strecha, xstrec01
  */
-public class VidPlayer implements Runnable {
+public final class VidPlayer implements Runnable {
     
     private volatile boolean playing = false;
     private boolean tracking = false;
     private final VidData vidData;
     private final Canvas canvas;
-    private final JSlider slider;
+    private final JSlider vidSlider;
     private final PlayButton playButton;
+    private final ArrayList<TrackedShape> trackedShapes;
     
-    public VidPlayer(VidData vid, Canvas framePane, JSlider slider, PlayButton playButton) {
+    public VidPlayer(VidData vid, Canvas framePane, JSlider slider, PlayButton playButton, ArrayList<TrackedShape> trackedShapes) {
         this.vidData = vid;
         this.canvas = framePane;
-        this.slider = slider;
+        this.vidSlider = slider;
         this.playButton = playButton;
+        this.trackedShapes = trackedShapes;
     }
 
     @Override
     public void run() {
         int frameNo = vidData.getFrameNo();
         int sleepTime = (int)Math.round(1/vidData.getFramerate()*Constants.FRAMERATE_ADJUSTMENT);
-        
-        ArrayList<Point> ctrlPts = canvas.getControlPts();
-        MatOfPoint2f pts = new MatOfPoint2f();
-        pts.alloc(ctrlPts.size());        
-        Utils.ptsToMatOfPts2f(ctrlPts, pts);
-        MatOfPoint2f nextPts = new MatOfPoint2f();
-        nextPts.alloc(ctrlPts.size());
-        MatOfByte state = new MatOfByte();
-        Image frame;
-        Mat grayImg;
-        Mat nextGrayImg;
                 
         while (playing && frameNo < vidData.getFrameCnt() - 1) {
             
+            canvas.drawVideoFrame(vidData.getNextFrame());
             if (tracking) {
-                grayImg = vidData.getCurrentGrayFrame();
-                frame = vidData.getNextFrame();
-                nextGrayImg = vidData.getCurrentGrayFrame();
-                if (!ctrlPts.isEmpty()) {
-                    // =============== Lucas-Kanade optical flow ===============
-                    Video.calcOpticalFlowPyrLK(grayImg,
-                                               nextGrayImg,
-                                               pts,
-                                               nextPts,
-                                               state,
-                                               new MatOfFloat());
-                }
-                
-                PCA.getInstance().getPlausibleShape(nextPts);
-                
-                Utils.matOfPts2fToPts(nextPts, ctrlPts);
-                nextPts.copyTo(pts);
-                canvas.drawVideoFrame(frame);
-            } else {
-                canvas.drawVideoFrame(vidData.getNextFrame());
+                canvas.setSplinePts(trackedShapes.get(frameNo).getSplinePoints());
             }
-            
             frameNo = vidData.getFrameNo();
-            slider.setValue(frameNo);
+            vidSlider.setValue(frameNo);
             
             try {
                 Thread.sleep(sleepTime);

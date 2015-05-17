@@ -81,15 +81,6 @@ public final class VidData {
     }
     
     /**
-     * Vráti šedotónový snímok, ktorého poradové číslo je aktuálne nastavené.
-     * 
-     * @return snímok videa
-     */
-    public Mat getCurrentGrayFrame() {
-        return grayFrames.get(frameNo);
-    }
-    
-    /**
      * Vráti i-ty snímok. Indexované od 0.
      * 
      * @param i číslo snímku
@@ -121,6 +112,7 @@ public final class VidData {
     
     public void reset() {
         frames.clear();
+        grayFrames.clear();
         framerate = 0;
         frameWidth = 0;
         frameHeight = 0;

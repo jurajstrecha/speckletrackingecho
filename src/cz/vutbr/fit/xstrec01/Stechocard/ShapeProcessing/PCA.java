@@ -12,19 +12,21 @@ import org.opencv.core.MatOfPoint2f;
  *
  * @author Juraj Strecha, xstrec01
  */
-public class PCA {
+public final class PCA {
     private static PCA instance = null;
     
-    Mat eigenvectors;
-    Mat eigenvalues;
-    Mat mean;
-    Mat bLowerBounds;
-    Mat bUpperBounds;
+    public Mat eigenvectors;
+    public Mat eigenvalues;
+    public Mat mean;
+    public Mat bLowerBounds;
+    public Mat bUpperBounds;
+    public boolean initialized;
     
     private PCA() {
         eigenvectors = new Mat();
         eigenvalues = new Mat();
         mean = new Mat();
+        initialized = false;
     }
     
     /**
@@ -76,6 +78,8 @@ public class PCA {
             bLowerBounds.put(0, i, deviation * -Constants.EIGENVALUE_COMPENSATION);
             bUpperBounds.put(0, i, deviation * Constants.EIGENVALUE_COMPENSATION);
         }
+        // poznač, že hodnoty boli nastavené
+        initialized = true;
     }
 
     /**
@@ -122,9 +126,13 @@ public class PCA {
         int shapeSize = shape.rows();
         Mat shapeMat = new Mat(1, shapeSize*2, CvType.CV_64F);
         
-        Utils.matOfPts2fToPCAMat(shape, shapeMat);
+        MatUtils.matOfPoint2fToPCAMat(shape, shapeMat);
         pca(shapeMat);
-        Utils.pcaMatTomatOfPts2f(shapeMat, shape);
+        MatUtils.pcaMatToMatOfPoint2f(shapeMat, shape);
+    }
+    
+    public Mat getMeanShape() {
+        return mean;
     }
     
     /**
@@ -155,5 +163,14 @@ public class PCA {
         }
         
         return pcaMat;
+    }
+    
+    /**
+     * Zistí, či boli vypočítané eigenvektory a eigenhodnoty trénovacej množiny.
+     * 
+     * @return true, ak prebehla inicializácia, inak false
+     */
+    public boolean isInitialized() {
+        return initialized;
     }
 }

@@ -23,8 +23,20 @@ import org.json.simple.parser.ParseException;
  * 
  * @author Juraj Strecha, xstrec01
  */
-public final class Shapes extends ArrayList<Shape>{
-   
+public final class Shapes extends ArrayList<Shape> {
+    private static Shapes instance = null;
+    
+    private Shapes(){
+        super();
+    }
+
+    public static Shapes getInstance() {
+        if (instance == null) {
+            instance = new Shapes();
+        }
+        return instance;
+    }
+    
     /**
      * Z užívateľom anotovaného tvaru (sady bodov) vytvorí reprezentáciu tvaru
      * pomocou preloženia parametrickou krivkou - splajnom a rozdelením splajnu

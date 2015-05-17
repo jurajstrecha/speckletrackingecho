@@ -1,11 +1,15 @@
 package cz.vutbr.fit.xstrec01.Stechocard.GUI;
 
 import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
+import cz.vutbr.fit.xstrec01.Stechocard.App.ModelLoader;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.CatmullRom;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.PCA;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Procrustes;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Shape;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Shapes;
+import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.MatUtils;
+import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.TrackedShape;
+import cz.vutbr.fit.xstrec01.Stechocard.Video.OpticalFlow;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidData;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidLoader;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidPlayer;
@@ -39,6 +43,8 @@ import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 /**
@@ -64,8 +70,8 @@ public final class AppInterface extends JFrame {
     private final JDialog dialog;
     JPanel trackingControls;
     JPanel annotControls;
-    boolean generated;
     JLabel shapeCntLabel;
+    ArrayList<TrackedShape> trackedShapes;
     
     public AppInterface() {
         super(Constants.APP_NAME);
@@ -91,13 +97,10 @@ public final class AppInterface extends JFrame {
         mode = Constants.MODE_SHAPES;
         
         // dátové štruktúry - tvary a snímky načítaného videa
-        shapes = new Shapes();      
+        shapes = Shapes.getInstance();      
         frames = VidData.getInstance();
-        
-        // poznačí, že boli anotované tvary v aplikácii zarovnané pomocou
-        // procrustovej analýzy a bola na nich vykonaná analýza hlavných komponent
-        // (PCA)
-        generated = false;
+        trackedShapes = new ArrayList<TrackedShape>();
+        ModelLoader.load(PCA.getInstance());
 
         pack();
         setVisible(true);
@@ -197,7 +200,6 @@ public final class AppInterface extends JFrame {
                     shape.addAnnotatedPoints(controlPts);
                     if (shapes.serializeShape(shape)) {
                         canvas.reset();
-                        generated = false;
                         shapeCntLabel.setText(Constants.SHAPE_CNT_LABEL_TEXT + shapes.size());
                     } else {
                         System.err.println("Shape storing failed");
@@ -246,15 +248,13 @@ public final class AppInterface extends JFrame {
                 } else if (shapes.size() == 1) {
                     JOptionPane.showMessageDialog(Frame.getFrames()[0],
                                                   "More than one shape needed for generating the model");                    
-                } else if (!generated) {
-                    generateModel();
-                    generated = true;
-                    setMode(Constants.MODE_TRACKING);
                 } else {
+                    generateModel();
                     setMode(Constants.MODE_TRACKING);
+                    // ulož model natrvalo do súboru, odkiaľ sa vždy pri štarte načíta
+                    ModelLoader.save(PCA.getInstance());
                 }
-            }
-            
+            }            
         });
         
         annotControls.add(Box.createRigidArea(Constants.CTRL_BUTTONS_GAP));
@@ -275,10 +275,18 @@ public final class AppInterface extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 // ak nebol označený žiaden bod na sledovanie
                 if (!canvas.getControlPts().isEmpty()) {
-                    ArrayList<Point> spline = CatmullRom.calculateSpline(canvas.getControlPts());
-                    canvas.setControlPts(CatmullRom.divideSpline(spline, Constants.SPLINE_DIV_INTERVALS));
-                    canvas.setTracking(true);
+                    if (!trackedShapes.isEmpty()) {
+                        trackedShapes.clear();
+                    }
+                    for (int i = 0; i < frames.getFrameCnt(); i++) {
+                        trackedShapes.add(null);
+                    }
+                    OpticalFlow.calcOpticalFlow(canvas.getControlPts(), frames, trackedShapes);
                     player.setTracking(true);
+                    canvas.setTracking(true);
+                    canvas.reset();
+                    canvas.setSplinePts(trackedShapes.get(frames.getFrameNo()).getSplinePoints());
+                    canvas.repaint();
                 }
             }
             
@@ -292,9 +300,7 @@ public final class AppInterface extends JFrame {
             
             @Override
             public void actionPerformed(ActionEvent e) {
-                canvas.setTracking(false);
-                canvas.reset();
-                player.setTracking(false);
+                resetTracking();
             }
             
         });
@@ -396,9 +402,6 @@ public final class AppInterface extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setMode(Constants.MODE_SHAPES);
-                canvas.reset();
-                annotControls.setVisible(true);
-                trackingControls.setVisible(false);
             }            
         });
         menuItemShapes.setSelected(true);
@@ -409,7 +412,7 @@ public final class AppInterface extends JFrame {
         menuItemTracking.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (generated)  {
+                if (PCA.getInstance().isInitialized())  {
                     setMode(Constants.MODE_TRACKING);
                 } else {
                     JOptionPane.showMessageDialog(Frame.getFrames()[0], "Generate a model before the tracking");
@@ -438,6 +441,15 @@ public final class AppInterface extends JFrame {
         setJMenuBar(menuBar);
     }
     
+    private void resetTracking() {
+        if (!trackedShapes.isEmpty()) {
+            trackedShapes.clear();
+        }
+        canvas.setTracking(false);
+        canvas.reset();
+        player.setTracking(false);
+    }
+    
     /**
      * Nastaví mód, v ktorom užívateľ pracuje.
      * 
@@ -445,8 +457,8 @@ public final class AppInterface extends JFrame {
      */
     private void setMode(int mode) {
         if (isTrackingMode()) {
-            canvas.setTracking(false);
-        } else {
+            setShapesMode();
+        } else if (isShapesMode()) {
             setTrackingMode();
         }
         this.mode = mode;
@@ -484,7 +496,6 @@ public final class AppInterface extends JFrame {
     
     /**
      * Nastaví prostredie a príznaky pre mód sledovania.
-     * 
      */
     private void setTrackingMode() {
         Enumeration elements = group.getElements();
@@ -494,6 +505,22 @@ public final class AppInterface extends JFrame {
         canvas.reset();
         annotControls.setVisible(false);
         trackingControls.setVisible(true);
+        enableMenuShapePersistance(false);
+    }
+    
+    /**
+     * Nastaví prostredie a príznaky pre mód anotovania.
+     */
+    private void setShapesMode() {
+        canvas.setTracking(false);
+        canvas.reset();
+        annotControls.setVisible(true);
+        trackingControls.setVisible(false);
+
+        if (frames.isLoaded()) {
+            enableMenuShapePersistance(true);
+        }
+        
     }
     
     /**
@@ -515,10 +542,13 @@ public final class AppInterface extends JFrame {
                 int frameCnt = frames.getFrameCnt();
                 initSlider(frameCnt - 1, 0);
                 // inicializuj ovladanie videa
-                player = new VidPlayer(frames, canvas, vidSlider, buttonPlay);
+                player = new VidPlayer(frames, canvas, vidSlider, buttonPlay, trackedShapes);
                 buttonPlay.setPlay(false);
                 // zobraz ovladanie videa
                 enableControls(true);
+                if (isTrackingMode()) {
+                    resetTracking();
+                }
             }
             dialog.setVisible(false);            
         }
@@ -531,7 +561,9 @@ public final class AppInterface extends JFrame {
      */
     private void enableControls(boolean val) {
         vidControlsPane.setVisible(val);
-        enableMenuShapePersistance(val);
+        if (!isTrackingMode()) {
+            enableMenuShapePersistance(val);
+        }
     }
     
     /**
@@ -570,6 +602,9 @@ public final class AppInterface extends JFrame {
             newPos = frames.getFrameCnt() -1;
         }
 
+        if (canvas.isTracking()) {
+            canvas.setSplinePts(trackedShapes.get(newPos).getSplinePoints());
+        }
         Image img = frames.getFrame(newPos);
         canvas.drawVideoFrame(img);
     }
@@ -634,7 +669,6 @@ public final class AppInterface extends JFrame {
             if (Shapes.loadShapes(shapes, filename)) {
                 //JOptionPane.showMessageDialog(null, "Shapes loaded successfully");
                 shapeCntLabel.setText(Constants.SHAPE_CNT_LABEL_TEXT + shapes.size());
-                generated = false;
             } else {
                 JOptionPane.showMessageDialog(null, "Loading shapes failed");
             }

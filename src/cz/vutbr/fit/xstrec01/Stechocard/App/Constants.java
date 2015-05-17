@@ -11,6 +11,7 @@ import java.awt.Dimension;
  */
 public class Constants {
     public static final String APP_NAME = "Spcekle Tracking Echocardiography";
+    public static final String MODEL_FILE_PATH = "res/model.json";
     
     // mody aplikacie
     public static final int MODE_SHAPES = 1;
@@ -24,7 +25,7 @@ public class Constants {
     // počítať pomocou Core.eigen a výsledné hodnoty rozptylu sú násobne väčšie
     // ako by boli pri výpočte pomocou PCA, preto sa musí rozptyl upraviť,
     // hodnota je nastavená experimentálne, nie je matematicky overená
-    public static final double EIGENVALUE_COMPENSATION = 0.5;
+    public static final double EIGENVALUE_COMPENSATION = 0.3;
     
     // OpenCV konštanty chýbajuce v Java wrapperoch
     public static final int CV_CAP_PROP_FPS = 5;

@@ -25,9 +25,9 @@ final public class VidLoader {
      * Zistí parametre prehrávaného videa a všetko uloží do objektu triedy
      * VidData.
      * 
-     * @param path
-     * @param vidData
-     * @return 
+     * @param path umiestnenie videosúboru
+     * @param vidData štruktúra pre uloženie snímkov videa
+     * @return true, ak nahratie prebehne bez chýb, inak false
      */
     public static boolean load(String path, VidData vidData) {
         VideoCapture cap;
@@ -60,9 +60,9 @@ final public class VidLoader {
             vidData.setFrameHeight(frameHeight);
             
             do {
-                // pridaj snimok na vykreslenie
+                // pridaj snímok pre vykreslenie
                 vidData.addFrame(matToImg(frameMat, frameWidth, frameHeight, imgType));
-                // pridaj snimok v odtienoch sedi pre sledovanie optickeho toku
+                // pridaj snímok v odtieňoch šedej pre sledovanie optického toku
                 Imgproc.cvtColor(frameMat, frameMat, CvType.CV_8U);
                 vidData.addGrayFrame(frameMat.clone());
             } while (cap.read(frameMat));
