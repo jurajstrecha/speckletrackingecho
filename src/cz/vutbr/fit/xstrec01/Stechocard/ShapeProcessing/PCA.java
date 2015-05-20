@@ -6,6 +6,7 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Scalar;
 
 /**
  * Objekt pre výpočet analýzy hlavných komponent podľa návrhového vzoru Factory.
@@ -51,14 +52,16 @@ public final class PCA {
      */
     public void init(ArrayList<Mat> shapeMats) {
         Mat matForPCA = matsToPCAMats(shapeMats);
-
+        eigenvectors = new Mat();
+        eigenvalues = new Mat();
+        mean = new Mat();
+        
         // konštanta Constants.PCA_VARIANCE_TO_RETAIN udáva veľkosť odchýlky,
         // ktorú chceme z množiny tvarov zachovať, implicitne 98%
         Core.PCAComputeVar(matForPCA, mean, eigenvectors, Constants.PCA_VARIANCE_TO_RETAIN);
         
         Mat covar = new Mat();
-        Mat someMean = new Mat();
-        Core.calcCovarMatrix(matForPCA, covar, someMean, Core.COVAR_SCRAMBLED ^ Core.COVAR_ROWS);
+        Core.calcCovarMatrix(matForPCA, covar, new Mat(), Core.COVAR_NORMAL | Core.COVAR_ROWS | Core.COVAR_SCALE);        
         Core.eigen(covar, false, eigenvalues, new Mat());
         
         // vyber iba eigenvalues, ktoré majú eigenvector spočítaný metódou
@@ -72,12 +75,12 @@ public final class PCA {
         for (int i = 0; i < eigenvalues.rows(); i++) {
             variance = eigenvalues.get(i, 0)[0];
             deviation = Math.sqrt(variance);
-            // kvôli rozdielnemu výpočtu eigenvektorov a eigenvalues musí
-            // dojsť ku kompenzácii rozptylu, viac v komentári pri definícii
-            // konštanty EIGENVALUE_COMPENSATION v súbore Constants.java
-            bLowerBounds.put(0, i, deviation * -Constants.EIGENVALUE_COMPENSATION);
-            bUpperBounds.put(0, i, deviation * Constants.EIGENVALUE_COMPENSATION);
+            // 
+            bLowerBounds.put(0, i, deviation * -Constants.SIGMA_MULTIPLIER);
+            bUpperBounds.put(0, i, deviation * Constants.SIGMA_MULTIPLIER);
         }
+        MatUtils.printMat(bLowerBounds);
+        MatUtils.printMat(bUpperBounds);
         // poznač, že hodnoty boli nastavené
         initialized = true;
     }
@@ -112,23 +115,6 @@ public final class PCA {
         
         // vygenerovanie upraveného tvaru
         Core.PCABackProject(b, mean, eigenvectors, shapeMat);
-    }
-    
-    /**
-     * Z bodov získaných pomocou OpenCV LK optického toku vypočíta tvar podobný
-     * tým v trénovacej množine. Ak je tvar v povolených medziach, neupravuje
-     * sa, inak sa hodnoty orežú a vráti sta tvar najbližší  tvarom trénovacej
-     * množiny.
-     * 
-     * @param shape maticová reprezentácia bodov tvaru získaná z optického toku
-     */
-    public void getPlausibleShape(MatOfPoint2f shape) {
-        int shapeSize = shape.rows();
-        Mat shapeMat = new Mat(1, shapeSize*2, CvType.CV_64F);
-        
-        MatUtils.matOfPoint2fToPCAMat(shape, shapeMat);
-        pca(shapeMat);
-        MatUtils.pcaMatToMatOfPoint2f(shapeMat, shape);
     }
     
     public Mat getMeanShape() {

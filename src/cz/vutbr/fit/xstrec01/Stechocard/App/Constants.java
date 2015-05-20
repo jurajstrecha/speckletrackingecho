@@ -21,11 +21,8 @@ public class Constants {
     // eigenvektorov, ktoré vráti Core.PCACompute
     public static final double PCA_VARIANCE_TO_RETAIN  = 0.98;
    
-    // Java OpenCV wrapper neumožňuje výpočet eigenvalues pomocou PCA, musí sa
-    // počítať pomocou Core.eigen a výsledné hodnoty rozptylu sú násobne väčšie
-    // ako by boli pri výpočte pomocou PCA, preto sa musí rozptyl upraviť,
-    // hodnota je nastavená experimentálne, nie je matematicky overená
-    public static final double EIGENVALUE_COMPENSATION = 0.3;
+    // množstvo variability, ktoré je povolené pre zmenu koeficientov modelu
+    public static final double SIGMA_MULTIPLIER = 3;
     
     // OpenCV konštanty chýbajuce v Java wrapperoch
     public static final int CV_CAP_PROP_FPS = 5;

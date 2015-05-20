@@ -3,18 +3,9 @@ package cz.vutbr.fit.xstrec01.Stechocard.Video;
 import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
 import cz.vutbr.fit.xstrec01.Stechocard.GUI.Canvas;
 import cz.vutbr.fit.xstrec01.Stechocard.GUI.PlayButton;
-import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.PCA;
-import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.MatUtils;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.TrackedShape;
-import java.awt.Image;
-import java.awt.Point;
 import java.util.ArrayList;
 import javax.swing.JSlider;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.core.MatOfFloat;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.video.Video;
 
 /**
  * Riadi prehrávanie snímkov videa a volá funkcie pre sledovanie vyznačených bodov

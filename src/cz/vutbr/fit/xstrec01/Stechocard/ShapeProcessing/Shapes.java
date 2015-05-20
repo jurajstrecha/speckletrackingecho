@@ -15,7 +15,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 /**
- * Dátová štruktúra uchováva body, ktoré reprezentujú užívate+lom anotovaný tvar.
+ * Dátová štruktúra uchováva body, ktoré reprezentujú užívateľom anotovaný tvar.
  * Pri serializácii sa najskôr z bodov tvar vypočíta splajn, a potom sa krivka
  * rovnomerne rozdelí podľa vzdialenosti na Constants.SPLINE_DIV_INTERVALS
  * intervalov. Vznikne tak Constants.SPLINE_DIV_INTERVALS + 1 bodov a tie
@@ -100,15 +100,7 @@ public final class Shapes extends ArrayList<Shape> {
                     jsonPoint.add(p.y);
                     jsonAnnotated.add(jsonPoint);
                 }
-                JSONArray jsonSpline = new JSONArray();
-                for (Point p: shape.getSplinePoints()) {
-                    JSONArray jsonPoint = new JSONArray();
-                    jsonPoint.add(p.x);
-                    jsonPoint.add(p.y);
-                    jsonSpline.add(jsonPoint);
-                }
                 jsonShape.put("annotated", jsonAnnotated);
-                jsonShape.put("spline", jsonSpline);
                 jsonShapes.add(jsonShape);
             }
             jsonShapes.writeJSONString(bw);
@@ -155,10 +147,10 @@ public final class Shapes extends ArrayList<Shape> {
                 JSONParser parser = new JSONParser();                
                 Object o = parser.parse(br);
                 JSONArray jsonShapes = (JSONArray)o;
+                ArrayList<Point> splinePts;
                 for (Object jsonShape1 : jsonShapes) {
                     JSONObject jsonShape = (JSONObject) jsonShape1;
                     JSONArray jsonAnnotated = (JSONArray)jsonShape.get("annotated");
-                    JSONArray jsonSpline = (JSONArray)jsonShape.get("spline");
                     JSONArray point;
                     long x, y;
                     Shape shape = new Shape();
@@ -170,12 +162,8 @@ public final class Shapes extends ArrayList<Shape> {
                         // Point potrebujeme int
                         shape.addAnnotatedPoint(new Point((int)x, (int)y));
                     }
-                    for (Object jsonSpline1 : jsonSpline) {
-                        point = (JSONArray) jsonSpline1;
-                        x = (long)point.get(0);
-                        y = (long)point.get(1);
-                        shape.addSplinePoint(new Point((int)x, (int)y));
-                    }
+                    splinePts = CatmullRom.calculateSpline(shape.annotatedPoints);
+                    shape.addSplinePoints(CatmullRom.divideSpline(splinePts, Constants.SPLINE_DIV_INTERVALS));
                     shapes.add(shape);
                 }                
             } else {

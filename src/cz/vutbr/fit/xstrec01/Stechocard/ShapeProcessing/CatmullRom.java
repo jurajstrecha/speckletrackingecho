@@ -10,7 +10,8 @@ import java.util.ArrayList;
  * 
  * @author Juraj Strecha, xstrec01
  */
-public class CatmullRom {
+public final class CatmullRom {
+    private CatmullRom(){}
     
     /**
      * Z kontrolných bodov zadaných užívateľom, počtu vzorkov na jeden úsek
@@ -31,7 +32,7 @@ public class CatmullRom {
             extendCtrlPointsSet(controlPoints);
             
             for (int i = 1; i < controlPoints.size() - 2; i++) {
-                for (int j = 0; j < Constants.SPLINE_SAMPLES_PER_SPAN; j++) {
+                for (int j = 0; j < samples; j++) {
                     t = deltaT * j;
                     splinePoints.add(CREquation(controlPoints.get(i - 1),
                                                 controlPoints.get(i    ),
@@ -65,10 +66,10 @@ public class CatmullRom {
         double t2 = t * t;
         double t3 = t2 * t;
         
-        double b1 = 0.5f * (  -t3 + 2*t2 - t);
-        double b2 = 0.5f * ( 3*t3 - 5*t2 + 2);
-        double b3 = 0.5f * (-3*t3 + 4*t2 + t);
-        double b4 = 0.5f * (   t3 -   t2    );
+        double b1 = 0.5f * (  -t3 + 2*t2 - t    );
+        double b2 = 0.5f * ( 3*t3 - 5*t2     + 2);
+        double b3 = 0.5f * (-3*t3 + 4*t2 + t    );
+        double b4 = 0.5f * (   t3 -   t2        );
                
         double x = b1*p1.getX() + b2*p2.getX() + b3*p3.getX() + b4*p4.getX();
         double y = b1*p1.getY() + b2*p2.getY() + b3*p3.getY() + b4*p4.getY();

@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Scalar;
 
 /**
@@ -212,8 +211,8 @@ public final class Procrustes {
      * posunutie tvaru tak, aby sme minimalizovali Euklidovu vzdialenosť vzhľadom
      * k vzorovému tvaru.
      * 
-     * @param shape1Centroid ťažisko tvaru 1
-     * @param shape2Centroid ťažisko tvaru 2
+     * @param shape1Centroid ťažisko tvaru 1, na ktorý zarovnávame
+     * @param shape2Centroid ťažisko tvaru 2, ktorý zarovnávame
      * @param rotationMat rotačná matica
      * @param translationVec výsledný vektor posunu
      */

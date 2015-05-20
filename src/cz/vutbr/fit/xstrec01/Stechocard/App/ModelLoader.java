@@ -1,9 +1,6 @@
 package cz.vutbr.fit.xstrec01.Stechocard.App;
 
-import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.MatUtils;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.PCA;
-import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Shape;
-import java.awt.Point;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -53,7 +50,6 @@ public final class ModelLoader {
                             for (int j = 0; j < eigenvector.size(); j++) {
                                 eigenvectorMat.put(0, j, (double)eigenvector.get(j));
                             }
-                            //eigenvectorsMat.reshape(0, i);
                             eigenvectorsMat.push_back(eigenvectorMat);
                         }
                         pca.eigenvectors = eigenvectorsMat;

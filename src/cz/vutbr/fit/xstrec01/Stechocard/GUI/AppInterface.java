@@ -2,12 +2,10 @@ package cz.vutbr.fit.xstrec01.Stechocard.GUI;
 
 import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
 import cz.vutbr.fit.xstrec01.Stechocard.App.ModelLoader;
-import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.CatmullRom;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.PCA;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Procrustes;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Shape;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.Shapes;
-import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.MatUtils;
 import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.TrackedShape;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.OpticalFlow;
 import cz.vutbr.fit.xstrec01.Stechocard.Video.VidData;
@@ -43,8 +41,6 @@ import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 /**
@@ -456,9 +452,9 @@ public final class AppInterface extends JFrame {
      * @param mode 
      */
     private void setMode(int mode) {
-        if (isTrackingMode()) {
+        if (mode == Constants.MODE_SHAPES) {
             setShapesMode();
-        } else if (isShapesMode()) {
+        } else if (mode == Constants.MODE_TRACKING) {
             setTrackingMode();
         }
         this.mode = mode;
