@@ -223,6 +223,8 @@ public final class OpticalFlow {
         MatUtils.matToPts(yMat, shapePoints);
         
         shape.getControlPoints().addAll(shapePoints);
+        
+        MatUtils.matToMatOfPoint2f(yMat, y);
 
         return shape;
     }
