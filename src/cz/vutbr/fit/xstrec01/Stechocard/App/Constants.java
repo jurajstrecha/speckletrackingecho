@@ -40,7 +40,7 @@ public class Constants {
     public static final Dimension CTRL_BUTTONS_SIZE = new Dimension(150, 30);
     public static final Dimension CTRL_BUTTONS_GAP = new Dimension(0, 10);
     public static final Dimension SLIDER_DIM = new Dimension(550, 20);
-    public static final Dimension LOADING_DIALOG_DIM = new Dimension(300, 200);
+    public static final Dimension LOADING_DIALOG_DIM = new Dimension(300, 150);
     public static final Dimension HELP_WINDOW_SIZE = new Dimension(800,480);
 
     // rozmer riešeného problému, pre 2D STE bude vždy 2

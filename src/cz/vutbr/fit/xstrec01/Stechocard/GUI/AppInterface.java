@@ -62,8 +62,7 @@ public final class AppInterface extends JFrame {
     private JPanel vidControlsPane;
     private PlayButton buttonPlay;
     private JSlider vidSlider;
-    private final JOptionPane optionPane;
-    private final JDialog dialog;
+    private final JDialog loadingDialog;
     JPanel trackingControls;
     JPanel annotControls;
     JLabel shapeCntLabel;
@@ -82,9 +81,7 @@ public final class AppInterface extends JFrame {
         createComponents(getContentPane());
         
         // dialógové okno sa zobrazí pri načítavaní videa
-        optionPane = new JOptionPane("Please wait", JOptionPane.INFORMATION_MESSAGE, JOptionPane.DEFAULT_OPTION);
-        dialog = new JDialog();
-        dialog.setContentPane(optionPane);
+        loadingDialog = new JDialog(this, "Loading", false);
         initLoadingDialog();
         
         // ovládanie videa, vypnuté, kým nie je video načítané
@@ -271,6 +268,7 @@ public final class AppInterface extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 // ak nebol označený žiaden bod na sledovanie
                 if (!canvas.getControlPts().isEmpty()) {
+                    loadingDialog.setVisible(true);
                     if (!trackedShapes.isEmpty()) {
                         trackedShapes.clear();
                     }
@@ -283,6 +281,7 @@ public final class AppInterface extends JFrame {
                     canvas.reset();
                     canvas.setSplinePts(trackedShapes.get(frames.getFrameNo()).getSplinePoints());
                     canvas.repaint();
+                    loadingDialog.setVisible(false);
                 }
             }
             
@@ -320,11 +319,10 @@ public final class AppInterface extends JFrame {
      * Vytvorí dialógové okno, ktoré sa zobrazí pri nahrávaní videa.
      */
     private void initLoadingDialog() {
-        dialog.setTitle("Loading");
-        dialog.setPreferredSize(Constants.LOADING_DIALOG_DIM);
-        dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-        dialog.pack();
-        dialog.setLocationRelativeTo(null);
+        loadingDialog.setPreferredSize(Constants.LOADING_DIALOG_DIM);
+        loadingDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        loadingDialog.pack();
+        loadingDialog.setLocationRelativeTo(null);
     }
     
     /**
@@ -527,7 +525,7 @@ public final class AppInterface extends JFrame {
         int ret = fc.showDialog(this, "Open Video");
         if (ret == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
-            dialog.setVisible(true);
+            loadingDialog.setVisible(true);
             if (!loadVideo(file.getPath())) {
                 System.err.println("Unable to load the video");
             } else {
@@ -546,7 +544,7 @@ public final class AppInterface extends JFrame {
                     resetTracking();
                 }
             }
-            dialog.setVisible(false);            
+            loadingDialog.setVisible(false);
         }
     }
 

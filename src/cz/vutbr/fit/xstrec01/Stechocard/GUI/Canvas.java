@@ -1,7 +1,6 @@
 package cz.vutbr.fit.xstrec01.Stechocard.GUI;
 
 import cz.vutbr.fit.xstrec01.Stechocard.App.Constants;
-import cz.vutbr.fit.xstrec01.Stechocard.ShapeProcessing.CatmullRom;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;

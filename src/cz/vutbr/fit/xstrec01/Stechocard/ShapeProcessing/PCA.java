@@ -79,8 +79,6 @@ public final class PCA {
             bLowerBounds.put(0, i, deviation * -Constants.SIGMA_MULTIPLIER);
             bUpperBounds.put(0, i, deviation * Constants.SIGMA_MULTIPLIER);
         }
-        MatUtils.printMat(bLowerBounds);
-        MatUtils.printMat(bUpperBounds);
         // poznač, že hodnoty boli nastavené
         initialized = true;
     }

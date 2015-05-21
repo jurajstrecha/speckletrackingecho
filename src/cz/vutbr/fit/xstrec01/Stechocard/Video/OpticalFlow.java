@@ -75,14 +75,11 @@ public final class OpticalFlow {
         // body tvaru očakávané v nasledujúcom snímku
         MatOfPoint2f nextPts = new MatOfPoint2f();
         nextPts.alloc(divSplinePoints.size());
-
-        // vektor chýb
-        MatOfByte state = new MatOfByte();
         
         // šedotónové snímky, súčasný a nasledujúci
         Mat currGrayImg, nextGrayImg;
         
-        Size winSize = new Size(17, 17);
+        Size winSize = new Size(15, 15);
         
         for (int i = initFrameNo; i < vidData.getFrameCnt() - 1; i++) {
             currGrayImg = vidData.getGrayFrame(i);
@@ -92,10 +89,10 @@ public final class OpticalFlow {
                                        nextGrayImg,
                                        currPts,
                                        nextPts,
-                                       state,
+                                       new MatOfByte(),
                                        new MatOfFloat(),
                                        winSize,
-                                       2);
+                                       1);
             
             shape = getPlausibleTrackedShape(nextPts, H, R, t);
             shape.calcSplinePoints();
@@ -117,10 +114,10 @@ public final class OpticalFlow {
                                           nextGrayImg,
                                           currPts,
                                           nextPts,
-                                          state,
+                                          new MatOfByte(),
                                           new MatOfFloat(),
                                           winSize,
-                                          2);
+                                          1);
                 
                 shape = getPlausibleTrackedShape(nextPts, H, R, t);
                 shape.calcSplinePoints();
