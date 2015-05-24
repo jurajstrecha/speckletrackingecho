@@ -98,6 +98,7 @@ public final class ModelLoader {
         BufferedWriter bw = null;
         try {
             f = new File(Constants.MODEL_FILE_PATH);
+            f.getParentFile().mkdirs();
             fw = new FileWriter(f);
             bw = new BufferedWriter(fw);
             

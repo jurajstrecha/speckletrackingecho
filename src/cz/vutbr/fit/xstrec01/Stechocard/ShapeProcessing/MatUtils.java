@@ -177,7 +177,7 @@ public final class MatUtils {
     public static void matToMatOfPoint2f(Mat mat, MatOfPoint2f mat2f) {
         int ptsCnt = mat.rows();
         for (int i = 0; i < ptsCnt; i++) {
-            mat2f.put(0, i, mat.get(i, 0)[0], mat.get(i, 1)[0]);
+            mat2f.put(i, 0, mat.get(i, 0)[0], mat.get(i, 1)[0]);
         }
     }
     
