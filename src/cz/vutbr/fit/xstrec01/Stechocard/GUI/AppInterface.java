@@ -280,6 +280,7 @@ public final class AppInterface extends JFrame {
                     canvas.setTracking(true);
                     canvas.reset();
                     canvas.setSplinePts(trackedShapes.get(frames.getFrameNo()).getSplinePoints());
+                    canvas.setControlPts(trackedShapes.get(frames.getFrameNo()).getControlPoints());
                     canvas.repaint();
                     loadingDialog.setVisible(false);
                 }
@@ -597,7 +598,13 @@ public final class AppInterface extends JFrame {
         }
 
         if (canvas.isTracking()) {
-            canvas.setSplinePts(trackedShapes.get(newPos).getSplinePoints());
+            if (trackedShapes.get(newPos) != null) {
+                canvas.setSplinePts(trackedShapes.get(newPos).getSplinePoints());
+                canvas.setControlPts(trackedShapes.get(newPos).getControlPoints());
+            } else {
+                canvas.setSplinePts(null);
+                canvas.setControlPts(null);
+            }
         }
         Image img = frames.getFrame(newPos);
         canvas.drawVideoFrame(img);

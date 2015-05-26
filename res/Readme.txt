@@ -53,7 +53,7 @@
 # 2. RUN
 # ======
 # 2.1 Windows
-# 
+# java -
 #
 # 2.2 Linux
-# 
+# java -Djava.library.path=/home/juraj/opencv-2.4.10/build/lib -jar "STEchocard.jar" 

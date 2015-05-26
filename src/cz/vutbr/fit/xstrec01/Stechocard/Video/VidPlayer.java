@@ -41,6 +41,7 @@ public final class VidPlayer implements Runnable {
             canvas.drawVideoFrame(vidData.getNextFrame());
             if (tracking) {
                 canvas.setSplinePts(trackedShapes.get(frameNo).getSplinePoints());
+                canvas.setControlPts(trackedShapes.get(frameNo).getControlPoints());
             }
             frameNo = vidData.getFrameNo();
             vidSlider.setValue(frameNo);

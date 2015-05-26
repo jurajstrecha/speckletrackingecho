@@ -14,7 +14,6 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Size;
 import org.opencv.video.Video;
 
 /**
@@ -49,13 +48,14 @@ public final class OpticalFlow {
         // ako počiatočný tvar pre sledovanie
         ArrayList<Point> divSplinePoints;
         divSplinePoints = CatmullRom.divideSpline(
-                                     CatmullRom.calculateSpline(initialShape),
-                                                                Constants.SPLINE_DIV_INTERVALS);
-        shape.getControlPoints().addAll(divSplinePoints);
-        shape.calcSplinePoints();    
+                                         CatmullRom.calculateSpline(initialShape),
+                                         Constants.SPLINE_DIV_INTERVALS);
+        
         // index aktuálneho snímku
         int initFrameNo = vidData.getFrameNo();
         shapes.set(initFrameNo, shape);
+        shape.getControlPoints().addAll(divSplinePoints);
+        shape.calcSplinePoints();
         
         // štruktúry pre zarovnávanie tvaru
         Mat H = new Mat(Constants.SPACE_DIMENSION,
@@ -67,21 +67,25 @@ public final class OpticalFlow {
         Mat t = new Mat(Constants.SPACE_DIMENSION, 1, CvType.CV_64F);
         
         // body tvaru v aktuálnom snímku
-        MatOfPoint2f currPts = new MatOfPoint2f();
+        MatOfPoint2f currPts;
+        MatOfPoint2f nextPts;
+                      
+        // šedotónové snímky, súčasný a nasledujúci
+        Mat currGrayImg, nextGrayImg;
+
+        MatOfByte ofState = new MatOfByte();
+        MatOfFloat ofErr = new MatOfFloat();
+
+        currPts = new MatOfPoint2f();
         currPts.alloc(divSplinePoints.size());
         // prevod vyznačeného počiatočného tvaru z Point na dvojkanálovú maticu float
         MatUtils.ptsToMatOfPts2f(divSplinePoints, currPts);
-        
+
         // body tvaru očakávané v nasledujúcom snímku
-        MatOfPoint2f nextPts = new MatOfPoint2f();
+        nextPts = new MatOfPoint2f();
         nextPts.alloc(divSplinePoints.size());
-        
-        // šedotónové snímky, súčasný a nasledujúci
-        Mat currGrayImg, nextGrayImg;
-        
-        Size winSize = new Size(15, 15);
-        
-        for (int i = initFrameNo; i < vidData.getFrameCnt() - 1; i++) {
+
+        for (int i = initFrameNo; i < vidData.getFrameCnt() -1; i++) {
             currGrayImg = vidData.getGrayFrame(i);
             nextGrayImg = vidData.getGrayFrame(i + 1);
 
@@ -89,21 +93,22 @@ public final class OpticalFlow {
                                        nextGrayImg,
                                        currPts,
                                        nextPts,
-                                       new MatOfByte(),
-                                       new MatOfFloat(),
-                                       winSize,
-                                       1);
-            
+                                       ofState,
+                                       ofErr,
+                                       Constants.OPTICAL_FLOW_WIN_SIZE,
+                                       Constants.OPTICAL_FLOW_PYRAMID_HEIGHT);
+
             shape = getPlausibleTrackedShape(nextPts, H, R, t);
             shape.calcSplinePoints();
-            
+
             shapes.set(i + 1, shape);
-            
+
             nextPts.copyTo(currPts);
         }
-        
+       
         // ak sme nezačínali od prvého snímku, musíme spracovať aj snímky naľavo
         // od počiatočného
+        MatUtils.ptsToMatOfPts2f(divSplinePoints, currPts);
         if (initFrameNo > 0) {
             MatUtils.ptsToMatOfPts2f(divSplinePoints, currPts);
             for (int i = initFrameNo; i > 0; i--) {
@@ -114,10 +119,10 @@ public final class OpticalFlow {
                                           nextGrayImg,
                                           currPts,
                                           nextPts,
-                                          new MatOfByte(),
-                                          new MatOfFloat(),
-                                          winSize,
-                                          1);
+                                          ofState,
+                                          ofErr,
+                                          Constants.OPTICAL_FLOW_WIN_SIZE,
+                                          Constants.OPTICAL_FLOW_PYRAMID_HEIGHT);
                 
                 shape = getPlausibleTrackedShape(nextPts, H, R, t);
                 shape.calcSplinePoints();
@@ -126,8 +131,7 @@ public final class OpticalFlow {
                 
                 nextPts.copyTo(currPts);
             }
-        }
-        
+        }        
     }
 
     private static TrackedShape getPlausibleTrackedShape(MatOfPoint2f y,
@@ -167,11 +171,11 @@ public final class OpticalFlow {
         
         Mat initShape = yMat.clone();
         
-        double err;
-        int cnt = 0;
+        double currErr = Double.MAX_VALUE;
+        double prevErr;        
         do {
+            prevErr = currErr;
             yMat = initShape.clone();
-            cnt++;
             
             shapeCentroid = Procrustes.calculateShapeCentroid(xMat);
             shapeCenteredForH = Procrustes.centeredPts(xMat, shapeCentroid);
@@ -201,10 +205,10 @@ public final class OpticalFlow {
             // spätný prevod vektor pre PCA analýzu na 2D tvar pre rotáciu a transláciu
             MatUtils.pcaMatToMat(shapePcaMat, yMat);
            
-            err = Procrustes.calculateErr(yMat, xMat);
+            currErr = Procrustes.calculateErr(yMat, xMat);
             xMat = yMat.clone();
         
-        } while (err * err > 1);
+        } while (currErr < prevErr);
         
         // spätná rotácia a translácia
         R = R.t();
@@ -222,7 +226,6 @@ public final class OpticalFlow {
         shape.getControlPoints().addAll(shapePoints);
         
         MatUtils.matToMatOfPoint2f(yMat, y);
-
         return shape;
     }
 }

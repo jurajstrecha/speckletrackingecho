@@ -22,7 +22,6 @@ import javax.swing.JPanel;
 public final class Canvas extends JPanel {    
     private final ArrayList<Point> controlPts;
     private final ArrayList<Point> splinePoints;
-    public final ArrayList<Point> anotherPoints;
     private boolean tracking;
     
     private Image img;
@@ -33,7 +32,6 @@ public final class Canvas extends JPanel {
         super();
         controlPts = new ArrayList<Point>();
         splinePoints = new ArrayList<Point>();
-        anotherPoints = new ArrayList<Point>();
                 
         addMouseListener(new MouseAdapter() {
                 @Override
@@ -55,7 +53,6 @@ public final class Canvas extends JPanel {
         }
         drawControlPoints(g);
         if (tracking) {
-            drawAnotherPoints(g);
             drawSplinePoints(g);
         }
     }
@@ -69,29 +66,6 @@ public final class Canvas extends JPanel {
         if (!controlPts.isEmpty()) {
             for (Point p: controlPts) {
                 g.setColor(Constants.CONTROL_POINT_COLOR);
-                int x = (int)Math.round(p.getX());
-                int y = (int)Math.round(p.getY());
-                g.drawLine(x + Constants.CROSS_HORIZ_DIAMETER, y - 1,
-                           x - Constants.CROSS_HORIZ_DIAMETER, y - 1);
-                g.drawLine(x + Constants.CROSS_HORIZ_DIAMETER, y,
-                           x - Constants.CROSS_HORIZ_DIAMETER, y);
-                g.drawLine(x + Constants.CROSS_HORIZ_DIAMETER, y + 1,
-                           x - Constants.CROSS_HORIZ_DIAMETER, y + 1);
-
-                g.drawLine(x - 1, y + Constants.CROSS_VERT_DIAMETER,
-                           x - 1, y - Constants.CROSS_VERT_DIAMETER);
-                g.drawLine(x, y + Constants.CROSS_VERT_DIAMETER,
-                           x, y - Constants.CROSS_VERT_DIAMETER);
-                g.drawLine(x + 1, y + Constants.CROSS_VERT_DIAMETER,
-                           x + 1, y - Constants.CROSS_VERT_DIAMETER);
-            }
-        } 
-    }
-    
-    private void drawAnotherPoints(Graphics g) {
-        if (!anotherPoints.isEmpty()) {
-            for (Point p: anotherPoints) {
-                g.setColor(Color.GREEN);
                 int x = (int)Math.round(p.getX());
                 int y = (int)Math.round(p.getY());
                 g.drawLine(x + Constants.CROSS_HORIZ_DIAMETER, y - 1,
@@ -186,7 +160,9 @@ public final class Canvas extends JPanel {
     
     public void setSplinePts(ArrayList<Point> pts) {
         splinePoints.clear();
-        splinePoints.addAll(pts);
+        if (pts != null) {
+            splinePoints.addAll(pts);
+        }
     }
     
     /**

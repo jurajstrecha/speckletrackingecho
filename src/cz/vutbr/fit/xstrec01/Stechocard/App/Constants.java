@@ -2,6 +2,7 @@ package cz.vutbr.fit.xstrec01.Stechocard.App;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import org.opencv.core.Size;
 
 /**
  * Konštanty používané na rôznych miestach aplikácie, je možné pomocou nich
@@ -9,9 +10,18 @@ import java.awt.Dimension;
  * 
  * @author Juraj Strecha, xstrec01
  */
-public class Constants {
+public class Constants {    
+    // množstvo variability, ktoré je povolené pre zmenu koeficientov modelu
+    public static final double SIGMA_MULTIPLIER = 2;
+    // počet intervalov, na koľko bude rozdelený spline pre získanie rovnomerne
+    // rozloženych bodov, počet bodov je vždy SPLINE_DIV_INTERVALS + 1
+    public static final int SPLINE_DIV_INTERVALS = 8;
+    public static final Size OPTICAL_FLOW_WIN_SIZE = new Size(13, 13);
+    public static final int OPTICAL_FLOW_PYRAMID_HEIGHT = 1;
+
+    
     public static final String APP_NAME = "Spcekle Tracking Echocardiography";
-    public static final String MODEL_FILE_PATH = "res/model.json";
+    public static String MODEL_FILE_PATH = "res/model.json";
     
     // mody aplikacie
     public static final int MODE_SHAPES = 1;
@@ -19,10 +29,7 @@ public class Constants {
     
     // množstvo zmien, ktoré chceme metódou PCA popísať, ovplyvňuje počet
     // eigenvektorov, ktoré vráti Core.PCACompute
-    public static final double PCA_VARIANCE_TO_RETAIN  = 0.98;
-   
-    // množstvo variability, ktoré je povolené pre zmenu koeficientov modelu
-    public static final double SIGMA_MULTIPLIER = 3;
+    public static final double PCA_VARIANCE_TO_RETAIN  = 0.98;   
     
     // OpenCV konštanty chýbajuce v Java wrapperoch
     public static final int CV_CAP_PROP_FPS = 5;
@@ -54,9 +61,6 @@ public class Constants {
     
     // počet bodov intervalu pri výpočte spline
     public static final int SPLINE_SAMPLES_PER_SPAN = 20;
-    // počet intervalov, na koľko bude rozdelený spline pre získanie rovnomerne
-    // rozloženych bodov, počet bodov je vždy SPLINE_DIV_INTERVALS + 1
-    public static final int SPLINE_DIV_INTERVALS = 10;
     
     // veľkost kroku (v snímkoch) tlačidiel GUI '<<' a '>>'
     public static final int FRAME_ADJ_STEP = 5;
